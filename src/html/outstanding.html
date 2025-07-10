@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/logo.png">
+    <title>Finance Adapundi</title>
+    <link href="../dist/css/style.min.css" rel="stylesheet">
+    <link href="../assets/libs/morris.js/morris.css" rel="stylesheet">
+    <script src="../assets/libs/jquery/dist/jquery.min.js"></script>
+    <script src="../assets/libs/popper.js/dist/umd/popper.min.js"></script>
+    <script src="../assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../dist/js/app-style-switcher.js"></script>
+    <script src="../dist/js/feather.min.js"></script>
+    <script src="../assets/libs/perfect-scrollbar/dist/perfect-scrollbar.jquery.min.js"></script>
+    <script src="../assets/extra-libs/sparkline/sparkline.js"></script>
+    <script src="../dist/js/sidebarmenu.js"></script>
+    <script src="../dist/js/custom.min.js"></script>
+    <script src="../assets/libs/raphael/raphael.min.js"></script>
+    <script src="../assets/libs/morris.js/morris.min.js"></script>
+    <script src="../dist/js/pages/morris/morris-data.js"></script>
+</head>
+
+<body>
+    <!-- ============================================================== -->
+    <!-- Preloader - style you can find in spinners.css -->
+    <!-- ============================================================== -->
+    <div class="preloader">
+        <div class="lds-ripple">
+            <div class="lds-pos"></div>
+            <div class="lds-pos"></div>
+        </div>
+    </div>
+    <!-- ============================================================== -->
+    <!-- Main wrapper - style you can find in pages.scss -->
+    <!-- ============================================================== -->
+    <div id="main-wrapper" data-theme="light" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+        data-sidebar-position="fixed" data-header-position="fixed" data-boxed-layout="full">
+        <!-- ============================================================== -->
+        <!-- Topbar header - style you can find in pages.scss -->
+        <!-- ============================================================== -->
+        <header class="topbar" data-navbarbg="skin6">
+            <nav class="navbar top-navbar navbar-expand-lg">
+                <div class="navbar-header" data-logobg="skin6">
+                    <!-- This is for the sidebar toggle which is visible on mobile only -->
+                    <a class="nav-toggler waves-effect waves-light d-block d-lg-none" href="javascript:void(0)"><i
+                            class="ti-menu ti-close"></i></a>
+                    <!-- ============================================================== -->
+                    <!-- Logo -->
+                    <!-- ============================================================== -->
+                    <div class="navbar-brand">
+                        <!-- Logo icon -->
+                        <a href="index.html">
+                            <img src="../assets/images/logo-icon.png" alt="" class="img-fluid">
+                        </a>
+                    </div>
+                    <!-- ============================================================== -->
+                    <!-- End Logo -->
+                    <!-- ============================================================== -->
+                    <!-- ============================================================== -->
+                    <!-- Toggle which is visible on mobile only -->
+                    <!-- ============================================================== -->
+                    <a class="topbartoggler d-block d-lg-none waves-effect waves-light" href="javascript:void(0)"
+                        data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><i
+                            class="ti-more"></i></a>
+                </div>
+                <!-- ============================================================== -->
+                <!-- End Logo -->
+                <!-- ============================================================== -->
+                <div class="navbar-collapse collapse" id="navbarSupportedContent">
+                    
+                    <ul class="navbar-nav float-left me-auto ms-3 ps-1"></ul>
+                    <!-- ============================================================== -->
+                    <!-- Right side toggle and nav items -->
+                    <!-- ============================================================== -->
+                    <ul class="navbar-nav float-end">
+                        <!-- ============================================================== -->
+                        <!-- User profile and search -->
+                        <!-- ============================================================== -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="javascript:void(0)" data-bs-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                                <span class="ms-2 d-none d-lg-inline-block"><span>Hello,</span> <span
+                                        class="text-dark">Finance Data Analyst</span> <i data-feather="chevron-down"
+                                        class="svg-icon"></i></span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-right user-dd animated flipInY">
+                                <a class="dropdown-item" href="javascript:void(0)"><i data-feather="power"
+                                        class="svg-icon me-2 ms-1"></i>
+                                    Logout</a>
+                            </div>
+                        </li>
+                        <!-- ============================================================== -->
+                        <!-- User profile and search -->
+                        <!-- ============================================================== -->
+                    </ul>
+                </div>
+            </nav>
+        </header>
+        <!-- ============================================================== -->
+        <!-- End Topbar header -->
+        <!-- ============================================================== -->
+        <!-- ============================================================== -->
+        <!-- Left Sidebar - style you can find in sidebar.scss  -->
+        <!-- ============================================================== -->
+        <aside class="left-sidebar" data-sidebarbg="skin6">
+            <!-- Sidebar scroll-->
+            <div class="scroll-sidebar" data-sidebarbg="skin6">
+                <!-- Sidebar navigation-->
+                <nav class="sidebar-nav">
+                    <ul id="sidebarnav">
+                        <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="index.html"
+                                aria-expanded="false"><i data-feather="home" class="feather-icon"></i><span
+                                    class="hide-menu">Dashboard</span></a></li>
+                        <li class="list-divider"></li>
+
+                        <li class="nav-small-cap"><span class="hide-menu">FINANCE</span></li>
+
+                        <li class="sidebar-item"> <a class="sidebar-link" href="disbursement.html"
+                            aria-expanded="false"><i data-feather="tag" class="feather-icon"></i><span
+                                class="hide-menu">Disbursement</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="repayment.html"
+                                aria-expanded="false"><i data-feather="message-square" class="feather-icon"></i><span
+                                    class="hide-menu">Repayment</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="outstanding.html"
+                                aria-expanded="false"><i data-feather="calendar" class="feather-icon"></i><span
+                                    class="hide-menu">Outstanding</span></a></li>
+
+                        <li class="list-divider"></li>
+                        <li class="nav-small-cap"><span class="hide-menu">INSURANCE</span></li>
+                        <li class="sidebar-item"> <a class="sidebar-link" href="insurance.html"
+                            aria-expanded="false"><i data-feather="file-text" class="feather-icon"></i><span
+                                class="hide-menu">Report</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link has-arrow" href="javascript:void(0)"
+                                aria-expanded="false"><i data-feather="grid" class="feather-icon"></i><span
+                                    class="hide-menu">Manage Insurance </span></a>
+                            <ul aria-expanded="false" class="collapse  first-level base-level-line">
+                                <li class="sidebar-item"><a href="table-basic.html" class="sidebar-link"><span
+                                            class="hide-menu">SOA</span></a>
+                                </li>
+                                <li class="sidebar-item"><a href="table-dark-basic.html" class="sidebar-link"><span
+                                            class="hide-menu">Claim</span></a>
+                                </li>
+                                <li class="sidebar-item"><a href="table-sizing.html" class="sidebar-link"><span
+                                            class="hide-menu">Premi</span></a>
+                                </li>
+                            </ul>
+                        </li>
+                       
+                    </ul>
+                </nav>
+                <!-- End Sidebar navigation -->
+            </div>
+            <!-- End Sidebar scroll-->
+        </aside>
+        <!-- ============================================================== -->
+        <!-- End Left Sidebar - style you can find in sidebar.scss  -->
+        <!-- ============================================================== -->
+        <!-- Page wrapper  -->
+        <!-- ============================================================== -->
+        <div class="page-wrapper">
+            <!-- ============================================================== -->
+            <!-- Breadcrumb + Filters -->
+            <!-- ============================================================== -->
+            <div class="page-breadcrumb">
+                <div class="row">
+                    <div class="col-md-9">
+                        <h4 class="page-title text-dark font-weight-medium">Outstanding</h4>
+                        <div class="d-flex align-items-center">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb m-0 p-0">
+                                    <li class="breadcrumb-item"><a href="index.html" class="text-muted">Finance</a></li>
+                                    <li class="breadcrumb-item text-muted active" aria-current="page">Outstanding</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                    <div class="col-md-3 align-self-center">
+                      <div class="d-flex justify-content-end">
+                        <div class="customize-input me-3" style="min-width: 120px;">
+                          <select id="yearFilter" class="custom-select custom-select-set form-control bg-white border-0 custom-shadow custom-radius">
+                            <option value="2025" selected>2025</option>
+                            <!-- <option value="2024">2024</option> -->
+                          </select>
+                        </div>
+                        <div class="customize-input me-3" style="min-width: 120px;">
+                          <select id="monthFilter" class="custom-select custom-select-set form-control bg-white border-0 custom-shadow custom-radius">
+                            <option value="1">Jan</option>
+                            <option value="2">Feb</option>
+                            <option value="3">Mar</option>
+                            <option value="4">Apr</option>
+                            <option value="5">May</option>
+                            <option value="6">Jun</option>
+                            <option value="7">Jul</option>
+                            <option value="8">Aug</option>
+                            <option value="9">Sep</option>
+                            <option value="10">Oct</option>
+                            <option value="11">Nov</option>
+                            <option value="12">Dec</option>
+                          </select>
+                        </div>
+                        <div class="customize-input" style="min-width: 160px;">
+                          <select id="typeFilter" class="custom-select custom-select-set form-control bg-white border-0 custom-shadow custom-radius">
+                            <option value="ALL" selected>All</option>
+                            <option value="AP">Adapundi</option>
+                            <option value="CN">Credinex</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                </div>
+            </div>
+        
+            <!-- ============================================================== -->
+            <!-- Container fluid  -->
+            <!-- ============================================================== -->
+            <!-- Outstanding Dashboard - Baris Card dan Chart -->
+            <div class="container-fluid">
+              <!-- Row 1: Total Outstanding + Total Borrowers -->
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <div class="card">
+                    <div class="card-body">
+                      <h6 class="card-title">Total Outstanding</h6>
+                      <h3 id="total-out" class="text-dark"></h3>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="card">
+                    <div class="card-body">
+                      <h6 class="card-title">Total Borrowers</h6>
+                      <h3 id="total-bor" class="text-dark"></h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            
+              <!-- Row 2: Detail Outstanding -->
+              <div class="row mb-3" id="outstanding-summary">
+                <div class="col-md-4">
+                  <div class="card">
+                    <div class="card-body">
+                      <h6 class="card-title">&lt;=0 Outstanding</h6>
+                      <h3 id="less-zero-out" class="text-dark"></h3>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card">
+                    <div class="card-body">
+                      <h6 class="card-title">1,30 Outstanding</h6>
+                      <h3 id="up-zero-out" class="text-dark"></h3>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card">
+                    <div class="card-body">
+                      <h6 class="card-title">31,60 Outstanding</h6>
+                      <h3 id="thirty-out" class="text-dark"></h3>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card">
+                    <div class="card-body">
+                      <h6 class="card-title">61,90 Outstanding</h6>
+                      <h3 id="sixty-out" class="text-dark"></h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            
+              <!-- Row 3: Detail Borrowers -->
+              <div class="row" id="borrowers-summary">
+                <div class="col-md-3">
+                  <div class="card">
+                    <div class="card-body">
+                      <h6 class="card-title">&lt;=0 Borrowers</h6>
+                      <h3 id="less-zero-bor" class="text-dark"></h3>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card">
+                    <div class="card-body">
+                      <h6 class="card-title">1,30 Borrowers</h6>
+                      <h3 id="up-zero-bor" class="text-dark"></h3>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card">
+                    <div class="card-body">
+                      <h6 class="card-title">31,60 Borrowers</h6>
+                      <h3 id="thirty-bor" class="text-dark"></h3>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card">
+                    <div class="card-body">
+                      <h6 class="card-title">61,90 Borrowers</h6>
+                      <h3 id="sixty-bor" class="text-dark"></h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Row 3: Bar Charts (Lender + Age) -->
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="card">
+                    <div class="card-body">
+                      <h4 class="card-title">Outstanding per Lender</h4>
+                      <canvas id="out-lender-chart" style="height: 200px"></canvas>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="card">
+                    <div class="card-body">
+                      <h4 class="card-title">Outstanding by Age</h4>
+                      <canvas id="out-age-chart" style="height: 200px"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>               
+
+              <!-- Row 4: Bar Charts (Purpose + Gender) -->
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="card">
+                    <div class="card-body">
+                      <h4 class="card-title">Outstanding per Apply Purpose</h4>
+                      <canvas id="out-purpose-chart" style="height: 200px"></canvas>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="card">
+                    <div class="card-body">
+                      <h4 class="card-title">Outstanding by Gender</h4>
+                      <canvas id="out-gender-chart" style="height: 200px"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <script>
+              // Inisialisasi global chart holder
+              window.renderedCharts = {};
+            
+              function fetchOutstandingData() {
+                const year = $('#yearFilter').val();
+                const month = $('#monthFilter').val();
+                const type = $('#typeFilter').val();
+            
+                const url = `http://localhost:8000/outstanding-dashboard?year=${year}&month=${month}&tipe=${type}`;
+                $.getJSON(url)
+                  .done(function (data) {
+                    console.log("✅ Data loaded:", data);
+                
+                    // Build card helper
+                    function buildCard(title, value) {
+                      return `<div class="col-md-3">
+                        <div class="card">
+                          <div class="card-body">
+                            <h6 class="text-muted">${title}</h6>
+                            <h4 class="text-dark">${new Intl.NumberFormat().format(value)}</h4>
+                          </div>
+                        </div>
+                      </div>`;
+                    }
+                
+                    $('#total-out').text(new Intl.NumberFormat().format(data.row1["Total Outstanding"]));
+                    $('#total-bor').text(new Intl.NumberFormat().format(data.row2["Total Borrowers"]));
+                
+                    delete data.row1["Total Outstanding"];
+                    delete data.row2["Total Borrowers"];
+                
+                    $('#outstanding-summary').html(
+                      Object.entries(data.row1).map(([k, v]) => buildCard(k, v)).join('')
+                    );
+                
+                    $('#borrowers-summary').html(
+                      Object.entries(data.row2).map(([k, v]) => buildCard(k, v)).join('')
+                    );
+                
+                    function renderBarChart(canvasId, label, items, color) {
+                      const ctx = document.getElementById(canvasId).getContext('2d');                   
+
+                      // Destroy previous chart if exists
+                      if (window.renderedCharts[canvasId] instanceof Chart) {
+                        window.renderedCharts[canvasId].destroy();
+                      }                 
+
+                      // Sort descending
+                      const sortedItems = items.slice().sort((a, b) => b.value - a.value);                  
+
+                      const newChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                          labels: sortedItems.map(d => d.label),
+                          datasets: [{
+                            label: label,
+                            data: sortedItems.map(d => d.value),
+                            backgroundColor: color
+                          }]
+                        },
+                        options: {
+                          responsive: true,
+                          plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                              callbacks: {
+                                label: ctx => new Intl.NumberFormat().format(ctx.raw)
+                              }
+                            }
+                          },
+                          scales: {
+                            x: {
+                              grid: {
+                                display: false  // 🔴 Hapus garis vertikal
+                              },
+                              ticks: {
+                                autoSkip: false
+                              }
+                            },
+                            y: {
+                              grid: {
+                                display: false  // 🔴 Hapus garis horizontal
+                              },
+                              ticks: {
+                                callback: val => (val / 1e9).toFixed(0) + ' B'
+                              }
+                            }
+                          }
+                        }
+                      });                   
+
+                      window.renderedCharts[canvasId] = newChart;
+                    }
+                    renderBarChart('out-lender-chart', 'By Lender', data.row3["Outstanding per Lender"], '#1cc88a');
+                    renderBarChart('out-age-chart', 'By Age', data.row3["Outstanding by Age"], '#36b9cc');
+                    renderBarChart('out-purpose-chart', 'By Purpose', data.row4["Outstanding per Apply Purpose"], '#4e73df');
+                    renderBarChart('out-gender-chart', 'By Gender', data.row4["Outstanding by Gender"], '#f6c23e');
+                  })
+                  .fail(function (jqXHR, textStatus, errorThrown) {
+                    console.error("❌ Failed to load:", textStatus, errorThrown);
+                    alert("Gagal mengambil data. Cek koneksi ke API backend.");
+                  });
+              }
+          
+              // Init
+              $(document).ready(function () {
+                window.renderedCharts = {}; // Inisialisasi ulang jika reload
+                fetchOutstandingData();
+                $('#yearFilter, #monthFilter, #typeFilter').change(fetchOutstandingData);
+              });
+            </script>
+        </div>
+</body>
+</html>
