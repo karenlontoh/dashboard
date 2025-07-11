@@ -11,10 +11,6 @@ app = FastAPI()
 load_dotenv()
 months_line = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-# Static files & templates
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Bisa diganti ke asal frontend kamu, misal ["http://localhost:8080"]
@@ -801,6 +797,7 @@ def get_repayment_breakdown(year: int, month: int, tipe: str = "ALL"):
         "channel": [{"label": k, "value": v} for k, v in sorted(channel_data.items(), key=lambda x: x[1], reverse=True)],
         "method": [{"label": k, "value": v} for k, v in sorted(method_data.items(), key=lambda x: x[1], reverse=True)]
     }
+
 @app.get("/outstanding-dashboard")
 def get_outstanding_dashboard(year: int, month: int, tipe: str = "ALL"):
     conn = get_connection()
