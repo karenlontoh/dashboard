@@ -37,10 +37,10 @@ app.mount("/css", StaticFiles(directory="frontend/dist/css"), name="css")
 app.mount("/js", StaticFiles(directory="frontend/dist/js"), name="js")
 app.mount("/assets", StaticFiles(directory="frontend/assets"), name="assets")
 
-# Route dinamis untuk semua file HTML di frontend/html/
 @app.get("/{page_name}")
 def serve_page(page_name: str):
     file_path = os.path.join("frontend", "html", f"{page_name}.html")
+    print("🔍 Looking for:", file_path)  # DEBUG
     if os.path.exists(file_path):
         return FileResponse(file_path)
     return {"error": "Page not found"}, 404
