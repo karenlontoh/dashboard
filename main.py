@@ -32,7 +32,15 @@ def get_connection():
 
 # Mount folder frontend
 app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
+# Mount static folders
+app.mount("/css", StaticFiles(directory="frontend/dist/css"), name="css")
+app.mount("/js", StaticFiles(directory="frontend/dist/js"), name="js")
+app.mount("/assets", StaticFiles(directory="frontend/assets"), name="assets")
 
+# Serve index.html
+@app.get("/")
+def serve_index():
+    return FileResponse(os.path.join("frontend", "html", "index.html"))
 # Serve index.html saat root (/) diakses
 @app.get("/")
 def serve_index():
