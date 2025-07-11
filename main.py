@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from fastapi.responses import FileResponse
 import os, psycopg2
 from datetime import datetime
 from fastapi.staticfiles import StaticFiles
@@ -29,10 +30,13 @@ def get_connection():
     )
 
 
-# Default route: render frontend
+# Mount folder frontend
+app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
+
+# Serve index.html saat root (/) diakses
 @app.get("/")
-def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+def serve_index():
+    return FileResponse(os.path.join("frontend", "index.html"))
 
 @app.get("/dashboard")
 def get_dashboard_data(year: int = None):
