@@ -1,5 +1,5 @@
 # Gunakan base image Python resmi
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 # Buat direktori kerja
 WORKDIR /app
