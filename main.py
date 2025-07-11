@@ -39,8 +39,12 @@ app.mount("/assets", StaticFiles(directory="frontend/assets"), name="assets")
 
 @app.get("/{page_name}")
 def serve_page(page_name: str):
-    file_path = os.path.join("frontend", "html", f"{page_name}.html")
-    print("🔍 Looking for:", file_path)  # DEBUG
+    # Kalau sudah ada .html, jangan tambahkan lagi
+    if not page_name.endswith(".html"):
+        page_name += ".html"
+
+    file_path = os.path.join("frontend", "html", page_name)
+    print("🔍 Looking for:", file_path)
     if os.path.exists(file_path):
         return FileResponse(file_path)
     return {"error": "Page not found"}, 404
