@@ -36,7 +36,7 @@ app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 # Serve index.html saat root (/) diakses
 @app.get("/")
 def serve_index():
-    return FileResponse(os.path.join("frontend", "index.html"))
+    return FileResponse(os.path.join("frontend","html","index.html"))
 
 @app.get("/dashboard")
 def get_dashboard_data(year: int = None):
