@@ -347,7 +347,7 @@
 
                 <script>
                   function renderHorizontalBarChart(endpoint, elementId, color) {
-                    fetch(`http://localhost:8000/${endpoint}`)
+                    fetch(`/${endpoint}`)
                       .then(res => res.json())
                       .then(data => {
                         const labels = data.map(d => d.label);
@@ -408,7 +408,7 @@
                 </style>
                 <script>
                   function renderLineChart(endpoint, elementId, color) {
-                    fetch(`http://localhost:8000/${endpoint}`)
+                    fetch(`/${endpoint}`)
                       .then(response => response.json())
                       .then(data => {
                         // Hitung total & diff %
