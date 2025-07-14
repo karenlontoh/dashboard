@@ -13,11 +13,11 @@ import psycopg2
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 try:
-    conn = psycopg2.connect(DATABASE_URL)
+    get_connection = psycopg2.connect(DATABASE_URL)
     print("✅ DB connected")
 except Exception as e:
     print("❌ DB connection failed:", e)
-    conn = None
+    get_connection = None
 
 app = FastAPI()
 load_dotenv()
@@ -25,7 +25,7 @@ months_line = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "O
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Bisa diganti ke asal frontend kamu, misal ["http://localhost:8080"]
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,11 +53,6 @@ def serve_page(page_name: str):
 @app.get("/")
 def serve_index():
     return FileResponse(os.path.join("frontend", "html", "index.html"))
-
-# Serve index.html saat root (/) diakses
-@app.get("/")
-def serve_index():
-    return FileResponse(os.path.join("frontend","html","index.html"))
 
 @app.get("/dashboard")
 def get_dashboard_data(year: int = None):
