@@ -9,15 +9,19 @@ from fastapi.templating import Jinja2Templates
 import os
 import psycopg2
 
-# Database connection
+# Load env dan koneksi sekali saat startup
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 try:
-    get_connection = psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL)
     print("✅ DB connected")
 except Exception as e:
     print("❌ DB connection failed:", e)
-    get_connection = None
+    conn = None
+
+# Fungsi reusable untuk koneksi per request
+def get_connection():
+    return psycopg2.connect(os.getenv("DATABASE_URL"))
 
 app = FastAPI()
 load_dotenv()
