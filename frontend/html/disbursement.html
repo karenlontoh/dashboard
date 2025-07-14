@@ -325,7 +325,7 @@
                     const type = $("#typeFilter").val();
                 
                     // Summary MTD
-                    $.getJSON(`http://localhost:8000/dashboard/mtd?year=${year}&month=${month}`, function (data) {
+                    $.getJSON(`/data/dashboard/mtd?year=${year}&month=${month}`, function (data) {
                         $("#chart-loader").show();
                         $("#disb-mtd").text(formatRupiah(data.disbursement_mtd));
                         $("#ap-mtd").text(formatRupiah(data.ap_mtd));
@@ -334,7 +334,7 @@
                         $("#chart-loader").hide(); // ⬅️ Sembunyikan loader setelah selesai load daily chart
                     });                 
                     // Summary MTD
-                    $.getJSON(`http://localhost:8000/dashboard/ytd?year=${year}&month=${month}`, function (data) {
+                    $.getJSON(`/data/dashboard/ytd?year=${year}&month=${month}`, function (data) {
                         $("#chart-loader").show();
                         $("#disb-ytd").text(formatRupiah(data.disbursement_ytd));
                         $("#ap-ytd").text(formatRupiah(data.ap_ytd));
@@ -345,7 +345,7 @@
                                   
 
                     // === LINE CHART: Daily Disbursement (Morris.js) ===
-                    $.getJSON(`http://localhost:8000/disbursement-daily?year=${year}&month=${month}&tipe=${type}`, function (data) {
+                    $.getJSON(`/data/disbursement-daily?year=${year}&month=${month}&tipe=${type}`, function (data) {
                         $("#chart-loader").show();
                         const morrisData = data.map(d => ({
                             date: d.date,       // format: yyyy-mm-dd
@@ -383,7 +383,7 @@
                     });                 
 
                     // === BAR: By Lender ===
-                    $.getJSON(`http://localhost:8000/disbursement-breakdown?year=${year}&month=${month}&tipe=${type}`, function (data) {
+                    $.getJSON(`/data/disbursement-breakdown?year=${year}&month=${month}&tipe=${type}`, function (data) {
                         $("#chart-loader").show();
                         const labels = data.lender.map(item => item.label);
                         const values = data.lender.map(item => item.value);

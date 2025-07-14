@@ -175,7 +175,7 @@ def get_dashboard_data(year: int = None):
     }
 
 
-@app.get("/disbursement-line")
+@app.get("/data/disbursement-line")
 def get_disbursement_line_data(year: int = None):
     now = datetime.now()
     year = year or now.year
@@ -222,7 +222,7 @@ def get_disbursement_line_data(year: int = None):
 
     return result
 
-@app.get("/repayment-line")
+@app.get("/data/repayment-line")
 def get_repayment_line_data(year: int = None):
     now = datetime.now()
     year = year or now.year
@@ -261,7 +261,7 @@ def get_repayment_line_data(year: int = None):
     conn.close()
     return result
 
-@app.get("/outstanding-line")
+@app.get("/data/outstanding-line")
 def get_outstanding_line_data(year: int = None):
     now = datetime.now()
     year = year or now.year
@@ -304,7 +304,7 @@ def get_outstanding_line_data(year: int = None):
     conn.close()
     return result
 
-@app.get("/disbursement-by-lender")
+@app.get("/data/disbursement-by-lender")
 def disbursement_by_lender(year: int = None):
     year = year or datetime.now().year
     conn = get_connection()
@@ -331,7 +331,7 @@ def disbursement_by_lender(year: int = None):
     conn.close()
     return result
 
-@app.get("/repayment-by-channel")
+@app.get("/data/repayment-by-channel")
 def repayment_by_channel(year: int = None):
     year = year or datetime.now().year
     conn = get_connection()
@@ -359,7 +359,7 @@ def repayment_by_channel(year: int = None):
     conn.close()
     return result
 
-@app.get("/outstanding-by-lender")
+@app.get("/data/outstanding-by-lender")
 def outstanding_by_lender(year: int = None):
     now = datetime.now()
     year = year or now.year
@@ -391,7 +391,7 @@ def outstanding_by_lender(year: int = None):
     conn.close()
     return result
 
-@app.get("/disbursement-daily")
+@app.get("/data/disbursement-daily")
 def get_disbursement_daily(year: int, month: int, tipe: str = "ALL"):
     conn = get_connection()
     cursor = conn.cursor()
@@ -459,7 +459,7 @@ def get_disbursement_daily(year: int, month: int, tipe: str = "ALL"):
     return result
 
 
-@app.get("/disbursement-breakdown")
+@app.get("/data/disbursement-breakdown")
 def get_disbursement_breakdown(year: int, month: int, tipe: str = "ALL"):
     conn = get_connection()
     cursor = conn.cursor()
@@ -534,7 +534,7 @@ def get_disbursement_breakdown(year: int, month: int, tipe: str = "ALL"):
     return result
 
 
-@app.get("/dashboard/mtd")
+@app.get("/data/dashboard/mtd")
 def get_dashboard_mtd(year: int = None, month: int = None):
     now = datetime.now()
     year = year or now.year
@@ -574,7 +574,7 @@ def get_dashboard_mtd(year: int = None, month: int = None):
         "cn_mtd": cn_disbursement_mtd,
     }
 
-@app.get("/dashboard/ytd")
+@app.get("/data/dashboard/ytd")
 def get_dashboard_mtd(year: int = None, month: int = None):
     now = datetime.now()
     year = year or now.year
@@ -614,7 +614,7 @@ def get_dashboard_mtd(year: int = None, month: int = None):
         "cn_ytd": cn_disbursement_ytd,
     }
 
-@app.get("/repayment/mtd")
+@app.get("/data/repayment/mtd")
 def get_repayment_mtd(year: int = None, month: int = None):
     now = datetime.now()
     year = year or now.year
@@ -650,7 +650,7 @@ def get_repayment_mtd(year: int = None, month: int = None):
         "cn_mtd": cn_mtd,
     }
 
-@app.get("/repayment/ytd")
+@app.get("/data/repayment/ytd")
 def get_repayment_ytd(year: int = None, month: int = None):
     now = datetime.now()
     year = year or now.year
@@ -686,7 +686,7 @@ def get_repayment_ytd(year: int = None, month: int = None):
         "cn_ytd": cn_ytd,
     }
 
-@app.get("/repayment-daily")
+@app.get("/data/repayment-daily")
 def get_repayment_daily(year: int, month: int, tipe: str = "ALL"):
     conn = get_connection()
     cursor = conn.cursor()
@@ -749,7 +749,7 @@ def get_repayment_daily(year: int, month: int, tipe: str = "ALL"):
     conn.close()
     return result
 
-@app.get("/repayment-breakdown")
+@app.get("/data/repayment-breakdown")
 def get_repayment_breakdown(year: int, month: int, tipe: str = "ALL"):
     conn = get_connection()
     cursor = conn.cursor()
@@ -818,7 +818,7 @@ def get_repayment_breakdown(year: int, month: int, tipe: str = "ALL"):
         "method": [{"label": k, "value": v} for k, v in sorted(method_data.items(), key=lambda x: x[1], reverse=True)]
     }
 
-@app.get("/outstanding-dashboard")
+@app.get("/data/outstanding-dashboard")
 def get_outstanding_dashboard(year: int, month: int, tipe: str = "ALL"):
     conn = get_connection()
     cursor = conn.cursor()

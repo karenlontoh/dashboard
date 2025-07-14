@@ -329,7 +329,7 @@
                     const type = $("#typeFilter").val();
                 
                     // Summary MTD
-                    $.getJSON(`/repayment/mtd?year=${year}&month=${month}`, function (data) {
+                    $.getJSON(`/data/repayment/mtd?year=${year}&month=${month}`, function (data) {
                         showLoader();
                         $("#disb-mtd").text(formatRupiah(data.repayment_mtd));
                         $("#ap-mtd").text(formatRupiah(data.ap_mtd));
@@ -338,7 +338,7 @@
                         hideLoader(); // ⬅️ Sembunyikan loader setelah selesai load daily chart
                     });                 
                     // Summary MTD
-                    $.getJSON(`/repayment/ytd?year=${year}&month=${month}`, function (data) {
+                    $.getJSON(`/data/repayment/ytd?year=${year}&month=${month}`, function (data) {
                         showLoader();
                         $("#disb-ytd").text(formatRupiah(data.repayment_ytd));
                         $("#ap-ytd").text(formatRupiah(data.ap_ytd));
@@ -349,7 +349,7 @@
                                   
 
                     // === LINE CHART: Daily repayment (Morris.js) ===
-                    $.getJSON(`/repayment-daily?year=${year}&month=${month}&tipe=${type}`, function (data) {
+                    $.getJSON(`/data/repayment-daily?year=${year}&month=${month}&tipe=${type}`, function (data) {
                         showLoader();
                         const morrisData = data.map(d => ({
                             date: d.date,       // format: yyyy-mm-dd
@@ -387,7 +387,7 @@
                     });                 
 
                     // === BAR: By Lender ===
-                    $.getJSON(`/repayment-breakdown?year=${year}&month=${month}&tipe=${type}`, function (data) {
+                    $.getJSON(`/data/repayment-breakdown?year=${year}&month=${month}&tipe=${type}`, function (data) {
                         showLoader();
                         
                         // CN hanya satu grafik

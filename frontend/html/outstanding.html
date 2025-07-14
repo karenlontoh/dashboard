@@ -363,7 +363,7 @@
                 const month = $('#monthFilter').val();
                 const type = $('#typeFilter').val();
             
-                const url = `/outstanding-dashboard?year=${year}&month=${month}&tipe=${type}`;
+                const url = `/data/outstanding-dashboard?year=${year}&month=${month}&tipe=${type}`;
                 $.getJSON(url)
                   .done(function (data) {
                     console.log("✅ Data loaded:", data);
