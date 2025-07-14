@@ -6,7 +6,18 @@ import os, psycopg2
 from datetime import datetime
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+import os
+import psycopg2
 
+# Database connection
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+try:
+    conn = psycopg2.connect(DATABASE_URL)
+    print("✅ DB connected")
+except Exception as e:
+    print("❌ DB connection failed:", e)
+    conn = None
 
 app = FastAPI()
 load_dotenv()
@@ -20,19 +31,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def get_connection():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT"),
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD")
-    )
-
-
 # Mount folder frontend
 app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
-# Mount static folders
 app.mount("/css", StaticFiles(directory="frontend/dist/css"), name="css")
 app.mount("/js", StaticFiles(directory="frontend/dist/js"), name="js")
 app.mount("/assets", StaticFiles(directory="frontend/assets"), name="assets")
@@ -53,6 +53,7 @@ def serve_page(page_name: str):
 @app.get("/")
 def serve_index():
     return FileResponse(os.path.join("frontend", "html", "index.html"))
+
 # Serve index.html saat root (/) diakses
 @app.get("/")
 def serve_index():
