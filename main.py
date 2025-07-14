@@ -58,7 +58,7 @@ def serve_page(page_name: str):
 def serve_index():
     return FileResponse(os.path.join("frontend", "html", "index.html"))
 
-@app.get("/dashboard")
+@app.get("/data/dashboard")
 def get_dashboard_data(year: int = None):
     now = datetime.now()
     year = year or now.year

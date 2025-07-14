@@ -257,7 +257,7 @@
                         document.getElementById('repaymentValue').textContent = 'Loading...';
                         document.getElementById('outstandingValue').textContent = 'Loading...';
                     
-                        const res = await fetch('/dashboard');
+                        const res = await fetch('/data/dashboard');
                         const data = await res.json();
                     
                         document.getElementById('disbursementYTDValue').textContent = data.disbursement_ytd.toLocaleString();
