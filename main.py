@@ -901,6 +901,487 @@ def get_outstanding_dashboard(year: int, month: int, tipe: str = "ALL"):
     conn.close()
     return result
 
+
+@app.get("/data/account-balance")
+def get_premi_claim_summary():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Beginning Balance
+    cursor.execute("""
+        SELECT bank_account, beginning_balance
+        FROM premi_beginning_balance
+    """)
+    beginning_rows = cursor.fetchall()
+    beginning_balance = {row[0]: float(row[1]) for row in beginning_rows}
+
+    # Premium Paid
+    cursor.execute("""
+        SELECT bank_account, SUM(premi_netto) AS total_paid
+        FROM premi
+        WHERE status = 'Paid'
+        GROUP BY bank_account
+    """)
+    paid_rows = cursor.fetchall()
+    premium_paid = {row[0]: float(row[1]) for row in paid_rows}
+
+    # Claims
+    cursor.execute("""
+        SELECT 
+          CASE 
+            WHEN bank_account = 'STAR_DANA' THEN 'NDTL' 
+            ELSE bank_account 
+          END AS source_id,
+          SUM(actual_claim_amt) AS total_claim
+        FROM claim
+        GROUP BY 
+          CASE 
+            WHEN bank_account = 'STAR_DANA' THEN 'NDTL' 
+            ELSE bank_account 
+          END
+    """)
+    claim_rows = cursor.fetchall()
+    total_claim = {row[0]: float(row[1]) for row in claim_rows}
+
+    cursor.close()
+    conn.close()
+
+    # Gabungkan semua source_id
+    all_source_ids = set(beginning_balance) | set(premium_paid) | set(total_claim)
+
+    result = []
+    for source_id in sorted(all_source_ids):
+        begin = beginning_balance.get(source_id, 0.0)
+        paid = premium_paid.get(source_id, 0.0)
+        claim = total_claim.get(source_id, 0.0)
+        available = begin + paid - claim
+
+        result.append({
+            "source_id": source_id,
+            "beginning_balance": begin,
+            "premium_paid": paid,
+            "claim": claim,
+            "available_balance": available
+        })
+
+    return result
+
+@app.get("/data/premi-claim-summary")
+def get_premi_claim_summary():
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Beginning Balance
+        cursor.execute("""
+            SELECT bank_account, beginning_balance
+            FROM premi_beginning_balance
+        """)
+        beginning_rows = cursor.fetchall()
+        beginning_balance = {row[0]: float(row[1]) for row in beginning_rows}
+
+        # Premium Unpaid
+        cursor.execute("""
+            SELECT 
+                source_id,
+                lender,
+                bank_account,
+                SUM(premi_gross) AS total_unpaid
+            FROM premi
+            WHERE status IN ('Pending', 'Uninvoiced')
+            AND source_id IS NOT NULL AND lender IS NOT NULL AND bank_account IS NOT NULL
+            GROUP BY source_id, lender, bank_account
+        """)
+        unpaid_rows = cursor.fetchall()
+
+        # Premium Paid
+        cursor.execute("""
+            SELECT 
+                source_id,
+                lender,
+                bank_account,
+                SUM(premi_netto) AS total_paid
+            FROM premi
+            WHERE status = 'Paid'
+            AND source_id IS NOT NULL AND lender IS NOT NULL AND bank_account IS NOT NULL
+            GROUP BY source_id, lender, bank_account
+        """)
+        paid_rows = cursor.fetchall()
+
+        # Claims
+        cursor.execute("""
+            SELECT 
+                source_id,
+                lender_name AS lender,
+                CASE 
+                    WHEN bank_account = 'STAR_DANA' THEN 'NDTL' 
+                    ELSE bank_account 
+                END AS bank_account_new,
+                SUM(actual_claim_amt) AS total_claim
+            FROM claim
+            WHERE source_id IS NOT NULL AND lender_name IS NOT NULL AND bank_account IS NOT NULL
+            GROUP BY source_id, lender_name, bank_account_new
+        """)
+        claim_rows = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        def rows_to_dict(rows):
+            result = {}
+            for source_id, lender, bank_account, amount in rows:
+                result.setdefault(source_id, {}).setdefault(lender, {})[bank_account] = float(amount)
+            return result
+
+        return {
+            "beginning_balance": beginning_balance,
+            "premium_unpaid": rows_to_dict(unpaid_rows),
+            "premium_paid": rows_to_dict(paid_rows),
+            "claim": rows_to_dict(claim_rows)
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
+
+@app.get("/data/polis-summary")
+def get_polis_summary():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # === Ringkasan Baris Atas ===
+    cursor.execute("""
+        SELECT status, SUM(premi_netto)
+        FROM premi
+        GROUP BY status
+    """)
+    status_rows = cursor.fetchall()
+    status_summary = [{"status": r[0], "premi_netto": float(r[1])} for r in status_rows]
+
+    # === Tabel Baris dan Kolom ===
+    cursor.execute("""
+        SELECT status, capital_lender,
+               SUM(premi_netto) AS premi_netto, 
+               SUM(premi_gross) AS premi_gross
+        FROM premi
+        GROUP BY status, capital_lender
+    """)
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    lender_detail = []
+    for status, lender, netto, gross in rows:
+        lender_detail.append({
+            "lender": lender,
+            "status": status,
+            "premi_netto": float(netto),
+            "premi_gross": float(gross)
+        })
+
+    return {
+        "status_summary": status_summary,
+        "lender_detail": lender_detail
+    }
+
+@app.get("/data/uninvoiced-summary")
+def get_uninvoiced_summary():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT capital_lender, SUM(premi_gross)
+        FROM premi
+        WHERE status = 'Uninvoiced'
+        GROUP BY capital_lender
+    """)
+    rows = cursor.fetchall()
+    # === Bar chart Uninvoiced by capital_lender ===
+    cursor.execute("""
+        SELECT capital_lender, COUNT(loan_app_id)
+        FROM premi
+        WHERE status = 'Uninvoiced'
+        GROUP BY capital_lender
+    """)
+    lender_rows = cursor.fetchall()
+    bar_uninvoiced_lender = [{"capital_lender": r[0], "count": r[1]} for r in lender_rows]
+
+    # === Bar chart Uninvoiced by insure_company_code ===
+    cursor.execute("""
+        SELECT insure_company_code, COUNT(loan_app_id)
+        FROM premi
+        WHERE status = 'Uninvoiced'
+        GROUP BY insure_company_code
+    """)
+    insure_rows = cursor.fetchall()
+    bar_uninvoiced_insure = [{"insure_company_code": r[0], "count": r[1]} for r in insure_rows]
+
+    cursor.close()
+    conn.close()
+
+    result = []
+    for lender, total in rows:
+        result.append({
+            "lender": lender,
+            "premi_gross": float(total)
+        })
+
+    return {"uninvoiced_summary": result,
+            "bar_uninvoiced_lender": bar_uninvoiced_lender,
+            "bar_uninvoiced_insure": bar_uninvoiced_insure
+    }
+@app.get("/data/pending-summary")
+def get_pending_summary():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT capital_lender, SUM(premi_gross)
+        FROM premi
+        WHERE status = 'Pending'
+        GROUP BY capital_lender
+    """)
+    rows = cursor.fetchall()
+    # === Bar chart pending by capital_lender ===
+    cursor.execute("""
+        SELECT capital_lender, COUNT(loan_app_id)
+        FROM premi
+        WHERE status = 'Pending'
+        GROUP BY capital_lender
+    """)
+    lender_rows = cursor.fetchall()
+    bar_pending_lender = [{"capital_lender": r[0], "count": r[1]} for r in lender_rows]
+
+    # === Bar chart pending by insure_company_code ===
+    cursor.execute("""
+        SELECT insure_company_code, COUNT(loan_app_id)
+        FROM premi
+        WHERE status = 'Pending'
+        GROUP BY insure_company_code
+    """)
+    insure_rows = cursor.fetchall()
+    bar_pending_insure = [{"insure_company_code": r[0], "count": r[1]} for r in insure_rows]
+
+    cursor.close()
+    conn.close()
+
+    result = []
+    for lender, total in rows:
+        result.append({
+            "lender": lender,
+            "premi_gross": float(total)
+        })
+
+    return {"pending_summary": result,
+            "bar_pending_lender": bar_pending_lender,
+            "bar_pending_insure": bar_pending_insure
+    }
+
+@app.get("/data/paid-summary")
+def get_paid_summary():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT capital_lender, SUM(premi_gross)
+        FROM premi
+        WHERE status = 'Paid'
+        GROUP BY capital_lender
+    """)
+    rows = cursor.fetchall()
+    # === Bar chart paid by capital_lender ===
+    cursor.execute("""
+        SELECT capital_lender, COUNT(loan_app_id)
+        FROM premi
+        WHERE status = 'Paid'
+        GROUP BY capital_lender
+    """)
+    lender_rows = cursor.fetchall()
+    bar_paid_lender = [{"capital_lender": r[0], "count": r[1]} for r in lender_rows]
+
+    # === Bar chart paid by insure_company_code ===
+    cursor.execute("""
+        SELECT insure_company_code, COUNT(loan_app_id)
+        FROM premi
+        WHERE status = 'Paid'
+        GROUP BY insure_company_code
+    """)
+    insure_rows = cursor.fetchall()
+    bar_paid_insure = [{"insure_company_code": r[0], "count": r[1]} for r in insure_rows]
+
+    cursor.close()
+    conn.close()
+
+    result = []
+    for lender, total in rows:
+        result.append({
+            "lender": lender,
+            "premi_gross": float(total)
+        })
+
+    return {"paid_summary": result,
+            "bar_paid_lender": bar_paid_lender,
+            "bar_paid_insure": bar_paid_insure
+    }
+
+@app.get("/data/premi-transfer")
+def get_premi_transfer():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT lender, SUM(amount)
+        FROM premium_transfer
+        GROUP BY lender
+    """)
+    rows = cursor.fetchall()
+
+    result = []
+    for row in rows:
+        lender = row[0]
+        amount = float(row[1]) if row[1] is not None else 0.0
+        result.append({"lender": lender, "amount": amount})
+
+    cursor.close()
+    conn.close()
+
+    return {"summary": result}
+
+@app.get("/data/premium-transfer")
+def get_premium_transfer_list():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM premium_transfer")
+    rows = cursor.fetchall()
+    columns = [desc[0] for desc in cursor.description]  # ambil nama kolom
+
+    result = [dict(zip(columns, row)) for row in rows]
+
+    cursor.close()
+    conn.close()
+
+    return {"data": result}
+
+@app.get("/data/premium-rate")
+def get_premium_transfer_list():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM premium_rate")
+    rows = cursor.fetchall()
+    columns = [desc[0] for desc in cursor.description]  # ambil nama kolom
+
+    result = [dict(zip(columns, row)) for row in rows]
+
+    cursor.close()
+    conn.close()
+
+    return {"data": result}
+
+@app.get("/data/claim-settlement")
+def get_premium_transfer_list():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM claim_settlement")
+    rows = cursor.fetchall()
+    columns = [desc[0] for desc in cursor.description]  # ambil nama kolom
+
+    result = [dict(zip(columns, row)) for row in rows]
+
+    cursor.close()
+    conn.close()
+
+    return {"data": result}
+
+@app.get("/data/premi-all")
+def get_all_premi(
+    request: Request,
+    loan_app_id: str = "",
+    policy_no: str = "",
+    policy_date_from: str = "",
+    policy_date_to: str = "",
+    transferred_date_from: str = "",
+    transferred_date_to: str = "",
+    status: str = ""
+):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    query = "SELECT * FROM premi WHERE 1=1"
+    params = []
+
+    if loan_app_id:
+        query += " AND loan_app_id ILIKE %s"
+        params.append(f"%{loan_app_id}%")
+    if policy_no:
+        query += " AND policy_no ILIKE %s"
+        params.append(f"%{policy_no}%")
+    if policy_date_from:
+        query += " AND policy_date >= %s"
+        params.append(policy_date_from)
+    if policy_date_to:
+        query += " AND policy_date <= %s"
+        params.append(policy_date_to)
+    if transferred_date_from:
+        query += " AND date_transferred >= %s"
+        params.append(transferred_date_from)
+    if transferred_date_to:
+        query += " AND date_transferred <= %s"
+        params.append(transferred_date_to)
+    if status:
+        query += " AND status = %s"
+        params.append(status)
+
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    columns = [desc[0] for desc in cursor.description]
+    cursor.close()
+    conn.close()
+
+    result = [dict(zip(columns, row)) for row in rows]
+    return {"columns": columns, "data": result}
+
+@app.get("/data/claim-summary")
+def get_claim_summary():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Row 1: Ringkasan per source_id
+    cursor.execute("""
+        SELECT source_id, SUM(actual_claim_amt)
+        FROM claim
+        GROUP BY source_id
+    """)
+    source_rows = cursor.fetchall()
+    source_summary = [{"source_id": r[0], "total_claim": float(r[1])} for r in source_rows]
+
+    # Row 2: Tabel - group by bank_account + source_id, row = lender_name
+    cursor.execute("""
+        SELECT lender_name, source_id, SUM(actual_claim_amt)
+        FROM claim
+        GROUP BY lender_name, source_id
+    """)
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    claim_detail = []
+    for lender, source, amount in rows:
+        claim_detail.append({
+            "lender": lender,
+            "source_id": source,
+            "total_claim": float(amount)
+        })
+
+    return {
+        "source_summary": source_summary,
+        "claim_detail": claim_detail
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
