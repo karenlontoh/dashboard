@@ -485,7 +485,10 @@
                 $("#ap-mtd").text(formatRupiah(0, true));
                 $("#cn-mtd").text(formatRupiah(0, true));
 
-            
+                // Set default month & year ke saat ini
+                const now = new Date();
+                $("#monthFilter").val((now.getMonth() + 1).toString());
+                $("#yearFilter").val(now.getFullYear().toString());
                 // === Load Data Initial ===
                 fetchData();
             

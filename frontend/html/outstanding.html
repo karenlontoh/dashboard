@@ -458,6 +458,10 @@
               // Init
               $(document).ready(function () {
                 window.renderedCharts = {}; // Inisialisasi ulang jika reload
+                const now = new Date();
+                $('#monthFilter').val((now.getMonth() + 1).toString());
+                $('#yearFilter').val(now.getFullYear().toString());
+
                 fetchOutstandingData();
                 $('#yearFilter, #monthFilter, #typeFilter').change(fetchOutstandingData);
               });
