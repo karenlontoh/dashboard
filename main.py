@@ -1381,6 +1381,69 @@ def get_claim_summary():
         "claim_detail": claim_detail
     }
 
+@app.get("/data/account-balance")
+def get_premi_claim_summary():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Beginning Balance
+    cursor.execute("""
+        SELECT bank_account, beginning_balance
+        FROM premi_beginning_balance
+    """)
+    beginning_rows = cursor.fetchall()
+    beginning_balance = {row[0]: float(row[1]) for row in beginning_rows}
+
+    # Premium Paid
+    cursor.execute("""
+        SELECT bank_account, SUM(premi_netto) AS total_paid
+        FROM premi
+        WHERE status = 'Paid'
+        GROUP BY bank_account
+    """)
+    paid_rows = cursor.fetchall()
+    premium_paid = {row[0]: float(row[1]) for row in paid_rows}
+
+    # Claims
+    cursor.execute("""
+        SELECT 
+          CASE 
+            WHEN bank_account = 'STAR_DANA' THEN 'NDTL' 
+            ELSE bank_account 
+          END AS source_id,
+          SUM(actual_claim_amt) AS total_claim
+        FROM claim
+        GROUP BY 
+          CASE 
+            WHEN bank_account = 'STAR_DANA' THEN 'NDTL' 
+            ELSE bank_account 
+          END
+    """)
+    claim_rows = cursor.fetchall()
+    total_claim = {row[0]: float(row[1]) for row in claim_rows}
+
+    cursor.close()
+    conn.close()
+
+    # Gabungkan semua source_id
+    all_source_ids = set(beginning_balance) | set(premium_paid) | set(total_claim)
+
+    result = []
+    for source_id in sorted(all_source_ids):
+        begin = beginning_balance.get(source_id, 0.0)
+        paid = premium_paid.get(source_id, 0.0)
+        claim = total_claim.get(source_id, 0.0)
+        available = begin + paid - claim
+
+        result.append({
+            "source_id": source_id,
+            "beginning_balance": begin,
+            "premium_paid": paid,
+            "claim": claim,
+            "available_balance": available
+        })
+
+    return result
 
 if __name__ == "__main__":
     import uvicorn
