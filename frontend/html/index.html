@@ -347,8 +347,8 @@
                       .then(res => res.json())
                       .then(data => {
                         const labels = data.map(d => d.label);
-                        const values = data.map(d => d.value); // JANGAN dibagi biar tooltip bisa tampil full
-                    
+                        const values = data.map(d => d.value);                
+
                         new Chart(document.getElementById(elementId), {
                           type: 'bar',
                           data: {
@@ -360,32 +360,36 @@
                             }]
                           },
                           options: {
-                            indexAxis: 'y', // horizontal bar
+                            indexAxis: 'y',
                             responsive: true,
                             plugins: {
                               legend: { display: false },
                               tooltip: {
                                 callbacks: {
                                   label: function (context) {
-                                    return new Intl.NumberFormat().format(context.raw); // tampilkan full nominal
+                                    return new Intl.NumberFormat().format(context.raw);
                                   }
                                 }
                               }
                             },
                             scales: {
                               x: {
+                                grid: { display: false },
                                 ticks: {
                                   callback: function (value) {
-                                    return (value / 1e9).toFixed(0) + 'B'; // di sumbu tetap disingkat
+                                    return (value / 1e9).toFixed(0) + 'B';
                                   }
                                 }
+                              },
+                              y: {
+                                grid: { display: false }
                               }
                             }
                           }
                         });
                       });
-                  }
-              
+                  }               
+
                   renderHorizontalBarChart('disbursement-by-lender', 'bar-disbursement-lender', '#1e88e5');
                   renderHorizontalBarChart('repayment-by-channel', 'bar-repayment-channel', '#4caf50');
                   renderHorizontalBarChart('outstanding-by-lender', 'bar-outstanding-lender', '#9c27b0');
