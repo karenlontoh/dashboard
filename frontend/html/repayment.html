@@ -119,9 +119,7 @@
                                 aria-expanded="false"><i data-feather="home" class="feather-icon"></i><span
                                     class="hide-menu">Dashboard</span></a></li>
                         <li class="list-divider"></li>
-
                         <li class="nav-small-cap"><span class="hide-menu">FINANCE</span></li>
-
                         <li class="sidebar-item"> <a class="sidebar-link" href="disbursement.html"
                             aria-expanded="false"><i data-feather="tag" class="feather-icon"></i><span
                                 class="hide-menu">Disbursement</span></a></li>
@@ -131,7 +129,6 @@
                         <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="outstanding.html"
                                 aria-expanded="false"><i data-feather="calendar" class="feather-icon"></i><span
                                     class="hide-menu">Outstanding</span></a></li>
-
                         <li class="list-divider"></li>
                         <li class="nav-small-cap"><span class="hide-menu">INSURANCE</span></li>
                         <li class="sidebar-item"> <a class="sidebar-link" href="insurance.html"
@@ -454,11 +451,7 @@
                 $("#cn-ytd").text(formatRupiah(0, true));
                 $("#ap-mtd").text(formatRupiah(0, true));
                 $("#cn-mtd").text(formatRupiah(0, true));
-                
-                // Set default month & year ke saat ini
-                const now = new Date();
-                $("#monthFilter").val((now.getMonth() + 1).toString());
-                $("#yearFilter").val(now.getFullYear().toString());
+
             
                 // === Load Data Initial ===
                 fetchData();

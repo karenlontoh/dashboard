@@ -169,8 +169,7 @@
             <!-- Breadcrumb + Filters -->
             <!-- ============================================================== -->
             <div class="page-breadcrumb">
-                <div class="row align-items-center justify-content-between">
-                    <!-- Kiri: Judul dan breadcrumb -->
+                <div class="row">
                     <div class="col-md-9">
                         <h4 class="page-title text-dark font-weight-medium">Premium</h4>
                         <div class="d-flex align-items-center">
@@ -181,6 +180,27 @@
                                 </ol>
                             </nav>
                         </div>
+                    </div>
+                    <div class="col-md-3 align-self-center">
+                      <div class="d-flex justify-content-end">
+                        <div class="customize-input me-3" style="min-width: 120px;">
+                          <select id="yearFilter" class="custom-select custom-select-set form-control bg-white border-0 custom-shadow custom-radius">
+                            <option value="2025" selected>2025</option>
+                            <!-- <option value="2024">2024</option> -->
+                          </select>
+                        </div>
+                        <div class="customize-input me-3" style="min-width: 120px;">
+                          <select id="monthFilter" class="custom-select custom-select-set form-control bg-white border-0 custom-shadow custom-radius">
+                            <option value="6">Jun</option>
+                            <option value="7">Jul</option>
+                            <option value="8">Aug</option>
+                            <option value="9">Sep</option>
+                            <option value="10">Oct</option>
+                            <option value="11">Nov</option>
+                            <option value="12">Dec</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                 </div>
             </div>
@@ -279,73 +299,113 @@
                     <!-- Script -->
                     <script>
                       document.addEventListener("DOMContentLoaded", function () {
-                        fetch("/data/polis-summary")
-                          .then(res => res.json())
-                          .then(data => {
-                            const { status_summary, lender_detail } = data;
-                        
-                            // === Card Atas ===
-                            const statusToId = {
-                              "Uninvoiced": "balance-uninvoiced",
-                              "Pending": "balance-pending",
-                              "Paid": "balance-paid"
-                            };
-                            status_summary.forEach(({ status, premi_netto }) => {
-                              const el = document.getElementById(statusToId[status]);
-                              if (el) el.textContent = `${premi_netto.toLocaleString("id-ID")}`;
-                            });
-                        
-                            // === Transform jadi nested: nested[lender][status]
-                            const nested = {};
-                            lender_detail.forEach(({ lender, status, premi_netto, premi_gross }) => {
-                              if (!nested[lender]) nested[lender] = {};
-                              nested[lender][status] = { premi_netto, premi_gross };
-                            });
-                        
-                            const header = document.getElementById("summaryHeader");
-                            const body = document.getElementById("summaryBody");
-                        
-                            const statuses = ["Uninvoiced", "Pending", "Paid"];
-                            const lenders = Object.keys(nested).sort();
-                        
-                            // === Header ===
-                            const row1 = document.createElement("tr");
-                            row1.innerHTML = `<th rowspan="2" class="text-center align-middle">Lender</th>`;
-                            statuses.forEach(status => {
-                              row1.innerHTML += `<th colspan="2" class="text-center">${status}</th>`;
-                            });
-                            row1.innerHTML += `<th colspan="2" class="text-center">TOTAL</th>`;
-                            header.appendChild(row1);
-                        
-                            const row2 = document.createElement("tr");
-                            statuses.forEach(() => {
-                              row2.innerHTML += `<th class="text-center">Netto</th><th class="text-center">Gross</th>`;
-                            });
-                            row2.innerHTML += `<th class="text-center">Netto</th><th class="text-center">Gross</th>`;
-                            header.appendChild(row2);
-                        
-                            // === Body ===
-                            lenders.forEach(lender => {
-                              const row = document.createElement("tr");
-                              row.innerHTML = `<td>${lender}</td>`;
-                              let totalNetto = 0;
-                              let totalGross = 0;
-                            
+                        const yearFilter = document.getElementById("yearFilter");
+                        const monthFilter = document.getElementById("monthFilter");                 
+
+                        // === Set default month & year ke saat ini ===
+                        const now = new Date();
+                        const currentMonth = now.getMonth() + 1; // 1 - 12
+                        const currentYear = now.getFullYear();                  
+
+                        // Pilih option di dropdown jika ada yang cocok
+                        if (yearFilter) {
+                          const yearOption = Array.from(yearFilter.options).find(opt => Number(opt.value) === currentYear);
+                          if (yearOption) yearOption.selected = true;
+                        }                   
+
+                        if (monthFilter) {
+                          const monthOption = Array.from(monthFilter.options).find(opt => Number(opt.value) === currentMonth);
+                          if (monthOption) monthOption.selected = true;
+                        }                   
+
+                        function loadPolisSummary() {
+                          const year = yearFilter.value;
+                          const month = monthFilter.value;                  
+
+                          fetch(`/data/polis-summary?year=${year}&month=${month}`)
+                            .then(res => res.json())
+                            .then(data => {
+                              const { status_summary, lender_detail } = data;                   
+
+                              // === Card Atas ===
+                              const statusToId = {
+                                "Uninvoiced": "balance-uninvoiced",
+                                "Pending": "balance-pending",
+                                "Paid": "balance-paid"
+                              };
+                              Object.values(statusToId).forEach(id => {
+                                const el = document.getElementById(id);
+                                if (el) el.textContent = "0";
+                              });                   
+
+                              status_summary.forEach(({ status, premi_netto }) => {
+                                const el = document.getElementById(statusToId[status]);
+                                if (el) el.textContent = `${premi_netto.toLocaleString("id-ID")}`;
+                              });                   
+
+                              // === Nested Transform ===
+                              const nested = {};
+                              lender_detail.forEach(({ lender, status, premi_netto, premi_gross }) => {
+                                if (!nested[lender]) nested[lender] = {};
+                                nested[lender][status] = { premi_netto, premi_gross };
+                              });                   
+
+                              const header = document.getElementById("summaryHeader");
+                              const body = document.getElementById("summaryBody");                  
+
+                              header.innerHTML = "";
+                              body.innerHTML = "";                  
+
+                              const statuses = ["Uninvoiced", "Pending", "Paid"];
+                              const lenders = Object.keys(nested).sort();                   
+
+                              // === Header Rows ===
+                              const row1 = document.createElement("tr");
+                              row1.innerHTML = `<th rowspan="2" class="text-center align-middle">Lender</th>`;
                               statuses.forEach(status => {
-                                const val = nested[lender]?.[status] || { premi_netto: 0, premi_gross: 0 };
-                                totalNetto += val.premi_netto;
-                                totalGross += val.premi_gross;
-                                row.innerHTML += `
-                                  <td class="text-end">${val.premi_netto ? '' + val.premi_netto.toLocaleString("id-ID") : ''}</td>
-                                  <td class="text-end">${val.premi_gross ? '' + val.premi_gross.toLocaleString("id-ID") : ''}</td>`;
+                                row1.innerHTML += `<th colspan="2" class="text-center">${status}</th>`;
                               });
-                          
-                              row.innerHTML += `
-                                <td class="text-end fw-bold">${totalNetto.toLocaleString("id-ID")}</td>
-                                <td class="text-end fw-bold">${totalGross.toLocaleString("id-ID")}</td>`;
-                              body.appendChild(row);
+                              row1.innerHTML += `<th colspan="2" class="text-center">TOTAL</th>`;
+                              header.appendChild(row1);                 
+
+                              const row2 = document.createElement("tr");
+                              statuses.forEach(() => {
+                                row2.innerHTML += `<th class="text-center">Netto</th><th class="text-center">Gross</th>`;
+                              });
+                              row2.innerHTML += `<th class="text-center">Netto</th><th class="text-center">Gross</th>`;
+                              header.appendChild(row2);                 
+
+                              // === Table Body ===
+                              lenders.forEach(lender => {
+                                const row = document.createElement("tr");
+                                row.innerHTML = `<td>${lender}</td>`;
+                                let totalNetto = 0;
+                                let totalGross = 0;                 
+
+                                statuses.forEach(status => {
+                                  const val = nested[lender]?.[status] || { premi_netto: 0, premi_gross: 0 };
+                                  totalNetto += val.premi_netto;
+                                  totalGross += val.premi_gross;
+                                  row.innerHTML += `
+                                    <td class="text-end">${val.premi_netto.toLocaleString("id-ID")}</td>
+                                    <td class="text-end">${val.premi_gross.toLocaleString("id-ID")}</td>
+                                  `;
+                                });                 
+
+                                row.innerHTML += `
+                                  <td class="text-end fw-bold">${totalNetto.toLocaleString("id-ID")}</td>
+                                  <td class="text-end fw-bold">${totalGross.toLocaleString("id-ID")}</td>
+                                `;
+                                body.appendChild(row);
+                              });
                             });
-                          });
+                        }                   
+
+                        // Trigger load on initial load and on filter change
+                        yearFilter.addEventListener("change", loadPolisSummary);
+                        monthFilter.addEventListener("change", loadPolisSummary);                   
+
+                        loadPolisSummary(); // Load awal
                       });
                     </script>
                 </div>
@@ -447,54 +507,75 @@
                     </div>
                     <script>
                     document.addEventListener("DOMContentLoaded", function () {
-                        fetch('/data/uninvoiced-summary')
-                            .then(response => response.json())
-                            .then(data => {
-                                const summary = data.uninvoiced_summary;
-                                const lenderIds = {
-                                    'SUPERBANK': 'uninvoiced-superbank',
-                                    'BNC': 'uninvoiced-bnc',
-                                    'SEABANK_V2': 'uninvoiced-seabank',
-                                    'DBS': 'uninvoiced-dbs',
-                                    'STAR_DANA': 'uninvoiced-stardana',
-                                    'MDTL': 'uninvoiced-mdtl',
-                                    'BCAD': 'uninvoiced-bcad',
-                                    'NDTL': 'uninvoiced-ndtl'
-                                };
-                            
-                                // Kosongkan semua value
-                                for (const id of Object.values(lenderIds)) {
-                                    document.getElementById(id).innerText = "0";
-                                }
-                            
-                                // Tampilkan data gross per lender
-                                summary.forEach(item => {
-                                    const id = lenderIds[item.lender];
-                                    if (id) {
-                                        document.getElementById(id).innerText = formatRupiah(item.premi_gross);
+                        const yearFilter = document.getElementById("yearFilter");
+                        const monthFilter = document.getElementById("monthFilter");
+                    
+                        // Load data saat halaman pertama kali dibuka
+                        fetchData(new Date().getFullYear(), new Date().getMonth() + 1);
+                    
+                        // Tambahkan event listener saat filter berubah
+                        yearFilter.addEventListener("change", function () {
+                            const year = parseInt(yearFilter.value);
+                            const month = parseInt(monthFilter.value);
+                            fetchData(year, month);
+                        });
+                    
+                        monthFilter.addEventListener("change", function () {
+                            const year = parseInt(yearFilter.value);
+                            const month = parseInt(monthFilter.value);
+                            fetchData(year, month);
+                        });
+                    
+                        function fetchData(year, month) {
+                            fetch(`/data/uninvoiced-summary?year=${year}&month=${month}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const summary = data.uninvoiced_summary;
+                                    const lenderIds = {
+                                        'SUPERBANK': 'uninvoiced-superbank',
+                                        'BNC': 'uninvoiced-bnc',
+                                        'SEABANK_V2': 'uninvoiced-seabank',
+                                        'DBS': 'uninvoiced-dbs',
+                                        'STAR_DANA': 'uninvoiced-stardana',
+                                        'MDTL': 'uninvoiced-mdtl',
+                                        'BCAD': 'uninvoiced-bcad',
+                                        'NDTL': 'uninvoiced-ndtl'
+                                    };
+                                
+                                    for (const id of Object.values(lenderIds)) {
+                                        document.getElementById(id).innerText = "0";
                                     }
+                                
+                                    summary.forEach(item => {
+                                        const id = lenderIds[item.lender];
+                                        if (id) {
+                                            document.getElementById(id).innerText = formatRupiah(item.premi_gross);
+                                        }
+                                    });
+                                
+                                    const barLender = data.bar_uninvoiced_lender.sort((a, b) => b.count - a.count);
+                                    const lenderLabels = barLender.map(item => item.lender);
+                                    const lenderCounts = barLender.map(item => item.count);
+                                    renderBarChart("bar-uninvoiced-lender", lenderLabels, lenderCounts);
+                                
+                                    const barInsure = data.bar_uninvoiced_insure.sort((a, b) => b.count - a.count);
+                                    const insureLabels = barInsure.map(item => item.insure_company_code);
+                                    const insureCounts = barInsure.map(item => item.count);
+                                    renderBarChart("bar-uninvoiced-insure", insureLabels, insureCounts);
                                 });
-                            
-                                // Bar chart: UNINVOICED by Lender
-                                const barLender = data.bar_uninvoiced_lender.sort((a, b) => b.count - a.count);
-                                const lenderLabels = barLender.map(item => item.capital_lender);
-                                const lenderCounts = barLender.map(item => item.count);
-                                renderBarChart("bar-uninvoiced-lender", lenderLabels, lenderCounts);
-                            
-                                // Bar chart: UNINVOICED by Insure Company
-                                const barInsure = data.bar_uninvoiced_insure.sort((a, b) => b.count - a.count);
-                                const insureLabels = barInsure.map(item => item.insure_company_code);
-                                const insureCounts = barInsure.map(item => item.count);
-                                renderBarChart("bar-uninvoiced-insure", insureLabels, insureCounts);
-                            });
-                        
+                        }
+                    
                         function formatRupiah(angka) {
                             return angka.toLocaleString('id-ID', { minimumFractionDigits: 0 });
                         }
                     
                         function renderBarChart(canvasId, labels, data) {
                             const ctx = document.getElementById(canvasId).getContext("2d");
-                            new Chart(ctx, {
+                            if (window.renderedCharts === undefined) window.renderedCharts = {};
+                            if (window.renderedCharts[canvasId]) {
+                                window.renderedCharts[canvasId].destroy();
+                            }
+                            window.renderedCharts[canvasId] = new Chart(ctx, {
                                 type: "bar",
                                 data: {
                                     labels: labels,
@@ -510,9 +591,7 @@
                                         legend: { display: false }
                                     },
                                     scales: {
-                                        x: {
-                                            grid: { display: false }
-                                        },
+                                        x: { grid: { display: false } },
                                         y: {
                                             beginAtZero: true,
                                             grid: { display: false }
@@ -621,54 +700,75 @@
                     </div>
                     <script>
                     document.addEventListener("DOMContentLoaded", function () {
-                        fetch('/data/pending-summary')
-                            .then(response => response.json())
-                            .then(data => {
-                                const summary = data.pending_summary;
-                                const lenderIds = {
-                                    'SUPERBANK': 'pending-superbank',
-                                    'BNC': 'pending-bnc',
-                                    'SEABANK_V2': 'pending-seabank',
-                                    'DBS': 'pending-dbs',
-                                    'STAR_DANA': 'pending-stardana',
-                                    'MDTL': 'pending-mdtl',
-                                    'BCAD': 'pending-bcad',
-                                    'NDTL': 'pending-ndtl'
-                                };
-                            
-                                // Kosongkan semua value
-                                for (const id of Object.values(lenderIds)) {
-                                    document.getElementById(id).innerText = "0";
-                                }
-                            
-                                // Tampilkan data gross per lender
-                                summary.forEach(item => {
-                                    const id = lenderIds[item.lender];
-                                    if (id) {
-                                        document.getElementById(id).innerText = formatRupiah(item.premi_gross);
+                        const yearFilter = document.getElementById("yearFilter");
+                        const monthFilter = document.getElementById("monthFilter");
+                    
+                        // Load data saat halaman pertama kali dibuka
+                        fetchData(new Date().getFullYear(), new Date().getMonth() + 1);
+                    
+                        // Tambahkan event listener saat filter berubah
+                        yearFilter.addEventListener("change", function () {
+                            const year = parseInt(yearFilter.value);
+                            const month = parseInt(monthFilter.value);
+                            fetchData(year, month);
+                        });
+                    
+                        monthFilter.addEventListener("change", function () {
+                            const year = parseInt(yearFilter.value);
+                            const month = parseInt(monthFilter.value);
+                            fetchData(year, month);
+                        });
+                    
+                        function fetchData(year, month) {
+                            fetch(`/data/pending-summary?year=${year}&month=${month}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const summary = data.pending_summary;
+                                    const lenderIds = {
+                                        'SUPERBANK': 'pending-superbank',
+                                        'BNC': 'pending-bnc',
+                                        'SEABANK_V2': 'pending-seabank',
+                                        'DBS': 'pending-dbs',
+                                        'STAR_DANA': 'pending-stardana',
+                                        'MDTL': 'pending-mdtl',
+                                        'BCAD': 'pending-bcad',
+                                        'NDTL': 'pending-ndtl'
+                                    };
+                                
+                                    for (const id of Object.values(lenderIds)) {
+                                        document.getElementById(id).innerText = "0";
                                     }
+                                
+                                    summary.forEach(item => {
+                                        const id = lenderIds[item.lender];
+                                        if (id) {
+                                            document.getElementById(id).innerText = formatRupiah(item.premi_gross);
+                                        }
+                                    });
+                                
+                                    const barLender = data.bar_pending_lender.sort((a, b) => b.count - a.count);
+                                    const lenderLabels = barLender.map(item => item.lender);
+                                    const lenderCounts = barLender.map(item => item.count);
+                                    renderBarChart("bar-pending-lender", lenderLabels, lenderCounts);
+                                
+                                    const barInsure = data.bar_pending_insure.sort((a, b) => b.count - a.count);
+                                    const insureLabels = barInsure.map(item => item.insure_company_code);
+                                    const insureCounts = barInsure.map(item => item.count);
+                                    renderBarChart("bar-pending-insure", insureLabels, insureCounts);
                                 });
-                            
-                                // Bar chart: Pending by Lender
-                                const barLender = data.bar_pending_lender.sort((a, b) => b.count - a.count);
-                                const lenderLabels = barLender.map(item => item.capital_lender);
-                                const lenderCounts = barLender.map(item => item.count);
-                                renderBarChart("bar-pending-lender", lenderLabels, lenderCounts);
-                            
-                                // Bar chart: Pending by Insure Company
-                                const barInsure = data.bar_pending_insure.sort((a, b) => b.count - a.count);
-                                const insureLabels = barInsure.map(item => item.insure_company_code);
-                                const insureCounts = barInsure.map(item => item.count);
-                                renderBarChart("bar-pending-insure", insureLabels, insureCounts);
-                            });
-                        
+                        }
+                    
                         function formatRupiah(angka) {
                             return angka.toLocaleString('id-ID', { minimumFractionDigits: 0 });
                         }
                     
                         function renderBarChart(canvasId, labels, data) {
                             const ctx = document.getElementById(canvasId).getContext("2d");
-                            new Chart(ctx, {
+                            if (window.renderedCharts === undefined) window.renderedCharts = {};
+                            if (window.renderedCharts[canvasId]) {
+                                window.renderedCharts[canvasId].destroy();
+                            }
+                            window.renderedCharts[canvasId] = new Chart(ctx, {
                                 type: "bar",
                                 data: {
                                     labels: labels,
@@ -684,9 +784,7 @@
                                         legend: { display: false }
                                     },
                                     scales: {
-                                        x: {
-                                            grid: { display: false }
-                                        },
+                                        x: { grid: { display: false } },
                                         y: {
                                             beginAtZero: true,
                                             grid: { display: false }
@@ -795,54 +893,75 @@
                     </div>
                     <script>
                     document.addEventListener("DOMContentLoaded", function () {
-                        fetch('/data/paid-summary')
-                            .then(response => response.json())
-                            .then(data => {
-                                const summary = data.paid_summary;
-                                const lenderIds = {
-                                    'SUPERBANK': 'paid-superbank',
-                                    'BNC': 'paid-bnc',
-                                    'SEABANK_V2': 'paid-seabank',
-                                    'DBS': 'paid-dbs',
-                                    'STAR_DANA': 'paid-stardana',
-                                    'MDTL': 'paid-mdtl',
-                                    'BCAD': 'paid-bcad',
-                                    'NDTL': 'paid-ndtl'
-                                };
-                            
-                                // Kosongkan semua value
-                                for (const id of Object.values(lenderIds)) {
-                                    document.getElementById(id).innerText = "0";
-                                }
-                            
-                                // Tampilkan data gross per lender
-                                summary.forEach(item => {
-                                    const id = lenderIds[item.lender];
-                                    if (id) {
-                                        document.getElementById(id).innerText = formatRupiah(item.premi_gross);
-                                    }
-                                });
-                            
-                                // Bar chart: paid by Lender
-                                const barLender = data.bar_paid_lender.sort((a, b) => b.count - a.count);
-                                const lenderLabels = barLender.map(item => item.capital_lender);
-                                const lenderCounts = barLender.map(item => item.count);
-                                renderBarChart("bar-paid-lender", lenderLabels, lenderCounts);
-                            
-                                // Bar chart: paid by Insure Company
-                                const barInsure = data.bar_paid_insure.sort((a, b) => b.count - a.count);
-                                const insureLabels = barInsure.map(item => item.insure_company_code);
-                                const insureCounts = barInsure.map(item => item.count);
-                                renderBarChart("bar-paid-insure", insureLabels, insureCounts);
-                            });
+                        const yearFilter = document.getElementById("yearFilter");
+                        const monthFilter = document.getElementById("monthFilter");
+                    
+                        // Load data saat halaman pertama kali dibuka
+                        fetchData(new Date().getFullYear(), new Date().getMonth() + 1);
+                    
+                        // Tambahkan event listener saat filter berubah
+                        yearFilter.addEventListener("change", function () {
+                            const year = parseInt(yearFilter.value);
+                            const month = parseInt(monthFilter.value);
+                            fetchData(year, month);
+                        });
+                    
+                        monthFilter.addEventListener("change", function () {
+                            const year = parseInt(yearFilter.value);
+                            const month = parseInt(monthFilter.value);
+                            fetchData(year, month);
+                        });
                         
+                        function fetchData(year, month) {
+                            fetch(`/data/paid-summary?year=${year}&month=${month}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const summary = data.paid_summary;
+                                    const lenderIds = {
+                                        'SUPERBANK': 'paid-superbank',
+                                        'BNC': 'paid-bnc',
+                                        'SEABANK_V2': 'paid-seabank',
+                                        'DBS': 'paid-dbs',
+                                        'STAR_DANA': 'paid-stardana',
+                                        'MDTL': 'paid-mdtl',
+                                        'BCAD': 'paid-bcad',
+                                        'NDTL': 'paid-ndtl'
+                                    };
+                                
+                                    for (const id of Object.values(lenderIds)) {
+                                        document.getElementById(id).innerText = "0";
+                                    }
+                                
+                                    summary.forEach(item => {
+                                        const id = lenderIds[item.lender];
+                                        if (id) {
+                                            document.getElementById(id).innerText = formatRupiah(item.premi_gross);
+                                        }
+                                    });
+                                
+                                    const barLender = data.bar_paid_lender.sort((a, b) => b.count - a.count);
+                                    const lenderLabels = barLender.map(item => item.lender);
+                                    const lenderCounts = barLender.map(item => item.count);
+                                    renderBarChart("bar-paid-lender", lenderLabels, lenderCounts);
+                                
+                                    const barInsure = data.bar_paid_insure.sort((a, b) => b.count - a.count);
+                                    const insureLabels = barInsure.map(item => item.insure_company_code);
+                                    const insureCounts = barInsure.map(item => item.count);
+                                    renderBarChart("bar-paid-insure", insureLabels, insureCounts);
+                                });
+                        }
+                    
                         function formatRupiah(angka) {
                             return angka.toLocaleString('id-ID', { minimumFractionDigits: 0 });
                         }
                     
                         function renderBarChart(canvasId, labels, data) {
                             const ctx = document.getElementById(canvasId).getContext("2d");
-                            new Chart(ctx, {
+                            if (window.renderedCharts === undefined) window.renderedCharts = {};
+                            if (window.renderedCharts[canvasId]) {
+                                window.renderedCharts[canvasId].destroy();
+                            }
+                            window.renderedCharts[canvasId] = new Chart(ctx, {
                                 type: "bar",
                                 data: {
                                     labels: labels,
@@ -858,9 +977,7 @@
                                         legend: { display: false }
                                     },
                                     scales: {
-                                        x: {
-                                            grid: { display: false }
-                                        },
+                                        x: { grid: { display: false } },
                                         y: {
                                             beginAtZero: true,
                                             grid: { display: false }
@@ -954,7 +1071,7 @@
                                     <div class="card-body">
                                     <h4 class="card-title">Premium Transfer List</h4>
                                         <div class="table-responsive">
-                                            <table id="default_order" class="display table table-bordered" style="width:100%">
+                                            <table id="transferList" class="display table table-bordered" style="width:100%">
                                                 <thead>
                                                     <tr>
                                                         <th>Invoice Code</th>
@@ -976,64 +1093,100 @@
                     </div>
                     <script>
                     document.addEventListener("DOMContentLoaded", function () {
-                        const lenderIds = {
-                            'SUPERBANK': 'transfer-superbank',
-                            'BNC': 'transfer-bnc',
-                            'SEABANK_V2': 'transfer-seabank',
-                            'DBS': 'transfer-dbs',
-                            'STAR_DANA': 'transfer-stardana',
-                            'MDTL': 'transfer-mdtl',
-                            'BCAD': 'transfer-bcad',
-                            'NDTL': 'transfer-ndtl'
-                        };
-                    
-                        // Ringkasan per lender
-                        fetch("/data/premi-transfer")
-                            .then(res => res.json())
-                            .then(data => {
-                                if (!data.summary || !Array.isArray(data.summary)) {
-                                    throw new Error("Format data tidak sesuai");
-                                }
-                            
-                                data.summary.forEach(item => {
-                                    const id = lenderIds[item.lender];
-                                    const el = document.getElementById(id);
-                                    if (el) el.textContent = 'Rp' + Number(item.amount).toLocaleString("id-ID");
-                                });
-                            })
-                            .catch(err => {
-                                console.error("Gagal fetch /data/premi-transfer:", err.message);
+                      const lenderIds = {
+                        'SUPERBANK': 'transfer-superbank',
+                        'BNC': 'transfer-bnc',
+                        'SEABANK_V2': 'transfer-seabank',
+                        'DBS': 'transfer-dbs',
+                        'STAR_DANA': 'transfer-stardana',
+                        'MDTL': 'transfer-mdtl',
+                        'BCAD': 'transfer-bcad',
+                        'NDTL': 'transfer-ndtl'
+                      };                    
+
+                      const yearFilter = document.getElementById("yearFilter");
+                      const monthFilter = document.getElementById("monthFilter");                   
+
+                      let transferTable = null;                 
+
+                      function loadPremiumTransfer() {
+                        const year = yearFilter.value;
+                        const month = monthFilter.value;                    
+
+                        fetch(`/data/premium-transfer?year=${year}&month=${month}`)
+                          .then(res => res.json())
+                          .then(data => {
+                            const transferList = Array.isArray(data.data) ? data.data : [];                 
+
+                            if (!transferTable) {
+                              transferTable = $('#transferList').DataTable({
+                                data: transferList,
+                                columns: [
+                                  { data: "invoice_code" },
+                                  { data: "description" },
+                                  {
+                                    data: "amount",
+                                    render: data => typeof data === "number" ? data.toLocaleString("id-ID") : ""
+                                  },
+                                  { data: "payment_date" },
+                                  { data: "source_id" },
+                                  { data: "lender" },
+                                  { data: "bank_account_destination" }
+                                ],
+                                order: [[3, 'asc']],
+                                pageLength: 10,
+                                lengthMenu: [5, 10, 25, 50, 100]
+                              });
+                            } else {
+                              transferTable.clear().rows.add(transferList).draw();
+                            }
+                          })
+                          .catch(err => {
+                            console.error("Gagal fetch /data/premium-transfer:", err.message);
+                          });
+                      }                 
+
+                      function loadPremiumSummary() {
+                        const year = yearFilter.value;
+                        const month = monthFilter.value;                    
+
+                        fetch(`/data/premi-transfer?year=${year}&month=${month}`)
+                          .then(res => res.json())
+                          .then(data => {
+                            Object.values(lenderIds).forEach(id => {
+                              const el = document.getElementById(id);
+                              if (el) el.textContent = "0";
+                            });                 
+
+                            const summaryList = Array.isArray(data.summary) ? data.summary : [];                    
+
+                            summaryList.forEach(item => {
+                              const id = lenderIds[item.lender?.toUpperCase()];
+                              const el = document.getElementById(id);
+                              if (el && typeof item.amount === "number") {
+                                el.textContent = item.amount.toLocaleString("id-ID");
+                              }
                             });
-                        
-                        // Isi tabel dan inisialisasi DataTable
-                        fetch("/data/premium-transfer")
-                            .then(res => res.json())
-                            .then(data => {
-                                const rows = data.data;
-                                const body = document.getElementById("transferBody");
-                            
-                                body.innerHTML = rows.map(row => `
-                                    <tr>
-                                        <td>${row.invoice_code ?? ''}</td>
-                                        <td>${row.description ?? ''}</td>
-                                        <td>${row.amount ? Number(row.amount).toLocaleString('id-ID') : ''}</td>
-                                        <td>${row.payment_date ?? ''}</td>
-                                        <td>${row.source_id ?? ''}</td>
-                                        <td>${row.lender ?? ''}</td>
-                                        <td>${row.bank_account_destination ?? ''}</td>
-                                    </tr>
-                                `).join('');
-                                
-                                // Baru setelah data diisi, panggil DataTable
-                                $('#default_order').DataTable({
-                                    order: [[0, 'asc']],
-                                    pageLength: 10,
-                                    lengthMenu: [5, 10, 25, 50, 100]
-                                });
-                            })
-                            .catch(err => {
-                                console.error("Gagal fetch /data/premium-transfer:", err.message);
-                            });
+                          })
+                          .catch(err => {
+                            console.error("Gagal fetch /data/premi-transfer:", err.message);
+                          });
+                      }                 
+
+                      // Initial load
+                      loadPremiumTransfer();
+                      loadPremiumSummary();                 
+
+                      // Filter change listeners
+                      yearFilter.addEventListener("change", () => {
+                        loadPremiumTransfer();
+                        loadPremiumSummary();
+                      });                   
+
+                      monthFilter.addEventListener("change", () => {
+                        loadPremiumTransfer();
+                        loadPremiumSummary();
+                      });
                     });
                     </script>
                 </div>

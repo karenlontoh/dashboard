@@ -201,16 +201,21 @@
                             <option value="12">Dec</option>
                           </select>
                         </div>
-                        <div class="customize-input" style="min-width: 160px;">
+                        <div class="customize-input me-3" style="min-width: 160px;">
                           <select id="typeFilter" class="custom-select custom-select-set form-control bg-white border-0 custom-shadow custom-radius">
                             <option value="ALL" selected>All</option>
                             <option value="AP">Adapundi</option>
                             <option value="CN">Credinex</option>
                           </select>
                         </div>
+                        <div class="customize-input me-3" style="min-width: 120px;">
+                          <select id="periodFilter" class="custom-select custom-select-set form-control bg-white border-0 custom-shadow custom-radius">
+                            <option value="YTD" selected>YTD</option>
+                            <option value="MTD">MTD</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
-
                 </div>
             </div>
         
@@ -298,7 +303,7 @@
                         <div class="card">
                             <div class="card-body">
                                 <h4 class="card-title">Disbursement by Lender</h4>
-                                <canvas id="bar-disbursement-lender" style="height: 200px;"></canvas>
+                                <canvas id="bar-disbursement-lender" style="height: 250px;"></canvas>
                             </div>
                         </div>
                     </div>
@@ -306,94 +311,135 @@
                         <div class="card">
                             <div class="card-body">
                                 <h4 class="card-title">Disbursement by Method</h4>
-                                <canvas id="bar-disbursement-method" style="height: 200px;"></canvas>
+                                <canvas id="bar-disbursement-method" style="height: 250px;"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <script>
-            $(document).ready(function () {
-                function fetchData() {
-                    $("#chart-loader").show();
-                    const year = $("#yearFilter").val();
-                    const month = $("#monthFilter").val();
-                    const type = $("#typeFilter").val();
-                
-                    // Summary MTD
-                    $.getJSON(`/data/dashboard/mtd?year=${year}&month=${month}`, function (data) {
+            
+                <script>
+                $(document).ready(function () {
+                    function fetchData() {
                         $("#chart-loader").show();
-                        $("#disb-mtd").text(formatRupiah(data.disbursement_mtd));
-                        $("#ap-mtd").text(formatRupiah(data.ap_mtd));
-                        $("#cn-mtd").text(formatRupiah(data.cn_mtd));
-                    }).always(function () {
-                        $("#chart-loader").hide(); // ⬅️ Sembunyikan loader setelah selesai load daily chart
-                    });                 
-                    // Summary MTD
-                    $.getJSON(`/data/dashboard/ytd?year=${year}&month=${month}`, function (data) {
-                        $("#chart-loader").show();
-                        $("#disb-ytd").text(formatRupiah(data.disbursement_ytd));
-                        $("#ap-ytd").text(formatRupiah(data.ap_ytd));
-                        $("#cn-ytd").text(formatRupiah(data.cn_ytd));
-                    }).always(function () {
-                        $("#chart-loader").hide(); // ⬅️ Sembunyikan loader setelah selesai load daily chart
-                    });    
-                                  
-
-                    // === LINE CHART: Daily Disbursement (Morris.js) ===
-                    $.getJSON(`/data/disbursement-daily?year=${year}&month=${month}&tipe=${type}`, function (data) {
-                        $("#chart-loader").show();
-                        const morrisData = data.map(d => ({
-                            date: d.date,       // format: yyyy-mm-dd
-                            day: parseInt(d.date.split("-")[2]), // ambil tanggal aja
-                            value: d.amount
-                        }));
+                        const year = $("#yearFilter").val();
+                        const month = $("#monthFilter").val();
+                        const type = $("#typeFilter").val();
+                        const period = $("#periodFilter").val();
                     
-                        // Hancurkan chart lama kalau ada
-                        $("#line-disbursement-chart").empty();
-                        Morris.Line({
-                            element: 'line-disbursement-chart',
-                            data: morrisData,
-                            xkey: 'day',
-                            ykeys: ['value'],
-                            labels: [''],
-                            lineColors: [type === "CN" ? "#1cc88a" : type === "AP" ? "#4e73df" : "#f6c23e"],
-                            resize: true,
-                            parseTime: false,
-                            xLabelAngle: 45, // miringkan biar muat
-                            yLabelFormat: function (y) {
-                                return (y / 1000000000).toFixed(0) + ' B';
-                            },
-                            hideHover: 'auto',
-                            grid: true,
-                            hoverCallback: function (index, options, content, row) {
-                                const formatted = new Intl.NumberFormat('en-US').format(row.value);
-                                return `<div style="padding:5px">
-                                            <strong>Day ${row.day}</strong><br/>
-                                            Disbursement: ${formatted}
-                                        </div>`;
-                            }
+                        // Summary MTD
+                        $.getJSON(`/data/dashboard/mtd?year=${year}&month=${month}`, function (data) {
+
+                            $("#chart-loader").show();
+                            $("#disb-mtd").text(formatRupiah(data.disbursement_mtd));
+                            $("#ap-mtd").text(formatRupiah(data.ap_mtd));
+                            $("#cn-mtd").text(formatRupiah(data.cn_mtd));
+                        }).always(function () {
+                            $("#chart-loader").hide();
+                        });                 
+                        // Summary MTD
+                        $.getJSON(`/data/dashboard/ytd?year=${year}&month=${month}`, function (data) {
+                            $("#chart-loader").show();
+                            $("#disb-ytd").text(formatRupiah(data.disbursement_ytd));
+                            $("#ap-ytd").text(formatRupiah(data.ap_ytd));
+                            $("#cn-ytd").text(formatRupiah(data.cn_ytd));
+                        }).always(function () {
+                            $("#chart-loader").hide();
+                        });    
+
+
+                        $.getJSON(`/data/disbursement-daily?year=${year}&month=${month}&tipe=${type}&period=${period}`, function (data) {
+                            $("#chart-loader").show();
+
+                            const morrisData = data.map(d => ({
+                                day: d.date, // karena d.date udah angka 1–31
+                                value: d.amount
+                            }));
+                        
+                            $("#line-disbursement-chart").empty();
+                            Morris.Line({
+                                element: 'line-disbursement-chart',
+                                data: morrisData,
+                                xkey: 'day',
+                                ykeys: ['value'],
+                                labels: [''],
+                                lineColors: [type === "CN" ? "#1cc88a" : type === "AP" ? "#4e73df" : "#f6c23e"],
+                                resize: true,
+                                parseTime: false,
+                                xLabelAngle: 45,
+                                yLabelFormat: function (y) {
+                                    return (y / 1_000_000_000).toFixed(0) + ' B';
+                                },
+                                hideHover: 'auto',
+                                grid: true,
+                                hoverCallback: function (index, options, content, row) {
+                                    const formatted = new Intl.NumberFormat('en-US').format(row.value);
+                                    return `<div style="padding:5px">
+                                                <strong>Day ${row.day}</strong><br/>
+                                                Disbursement: ${formatted}
+                                            </div>`;
+                                }
+                            });
                         });
-                    }).always(function () {
-                        $("#chart-loader").hide(); // ⬅️ Sembunyikan loader setelah selesai load daily chart
-                    });                 
 
-                    // === BAR: By Lender ===
-                    $.getJSON(`/data/disbursement-breakdown?year=${year}&month=${month}&tipe=${type}`, function (data) {
-                        $("#chart-loader").show();
-                        const labels = data.lender.map(item => item.label);
-                        const values = data.lender.map(item => item.value);
-                    
-                        if (window.lenderChart) window.lenderChart.destroy();
-                        const lenderCtx = document.getElementById("bar-disbursement-lender").getContext("2d");
-                        window.lenderChart = new Chart(lenderCtx, {
+                        // === BAR: By Lender ===
+                        $.getJSON(`/data/disbursement-breakdown?year=${year}&month=${month}&tipe=${type}&period=${period}`, function (data) {
+                            $("#chart-loader").show();
+                            const labels = data.lender.map(item => item.label);
+                            const values = data.lender.map(item => item.value);
+                        
+                            if (window.lenderChart) window.lenderChart.destroy();
+                            const lenderCtx = document.getElementById("bar-disbursement-lender").getContext("2d");
+                            window.lenderChart = new Chart(lenderCtx, {
+                                type: 'bar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'By Lender',
+                                        backgroundColor: '#36b9cc',
+                                        data: values
+                                    }]
+                                },
+                                options: {
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    return ' ' + new Intl.NumberFormat('en-US').format(context.raw);
+                                                }
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            grid: { display: false },
+                                            ticks: {
+                                                callback: function(value) {
+                                                    return (value / 1_000_000_000).toFixed(0) + ' B';
+                                                }
+                                            }
+                                        },
+                                        x: {
+                                            grid: { display: false } // ⬅️ Hapus garis vertikal (grid x)
+                                        }
+                                    }
+                                }
+                            });
+
+                            // === BAR: By Method ===
+                            const methodLabels = data.method.map(item => item.label);
+                            const methodValues = data.method.map(item => item.value);
+                        
+                        if (window.methodChart) window.methodChart.destroy();
+                        const methodCtx = document.getElementById("bar-disbursement-method").getContext("2d");
+                        window.methodChart = new Chart(methodCtx, {
                             type: 'bar',
                             data: {
-                                labels: labels,
+                                labels: methodLabels,
                                 datasets: [{
-                                    label: 'By Lender',
-                                    backgroundColor: '#36b9cc',
-                                    data: values
+                                    label: 'By Method',
+                                    backgroundColor: '#f6c23e',
+                                    data: methodValues
                                 }]
                             },
                             options: {
@@ -417,85 +463,44 @@
                                         }
                                     },
                                     x: {
-                                        grid: { display: false } // ⬅️ Hapus garis vertikal (grid x)
+                                        grid: { display: false }
                                     }
                                 }
                             }
                         });
 
-                        // === BAR: By Method ===
-                        const methodLabels = data.method.map(item => item.label);
-                        const methodValues = data.method.map(item => item.value);
-                    
-                    if (window.methodChart) window.methodChart.destroy();
-                    const methodCtx = document.getElementById("bar-disbursement-method").getContext("2d");
-                    window.methodChart = new Chart(methodCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: methodLabels,
-                            datasets: [{
-                                label: 'By Method',
-                                backgroundColor: '#f6c23e',
-                                data: methodValues
-                            }]
-                        },
-                        options: {
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            return ' ' + new Intl.NumberFormat('en-US').format(context.raw);
-                                        }
-                                    }
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    grid: { display: false },
-                                    ticks: {
-                                        callback: function(value) {
-                                            return (value / 1_000_000_000).toFixed(0) + ' B';
-                                        }
-                                    }
-                                },
-                                x: {
-                                    grid: { display: false } // ⬅️ Hapus garis vertikal (grid x)
-                                }
-                            }
-                        }
-                    });
 
+                        }).always(function () {
+                            $("#chart-loader").hide();
+                        });                 
+                    }
+                
+                    function formatRupiah(angka, isLoading = false) {
+                        if (isLoading) return 'Loading...';
+                        let result = new Intl.NumberFormat('en-US').format(angka); // en-US pakai koma
+                        return result;
+                    }
 
-                    }).always(function () {
-                        $("#chart-loader").hide(); // ⬅️ Sembunyikan loader setelah selesai load daily chart
-                    });                 
-                }
-            
-                function formatRupiah(angka, isLoading = false) {
-                    if (isLoading) return 'Loading...';
-                    let result = new Intl.NumberFormat('en-US').format(angka); // en-US pakai koma
-                    return result;
-                }
+                    $("#disb-ytd").text(formatRupiah(0, true));
+                    $("#disb-mtd").text(formatRupiah(0, true));
+                    $("#ap-ytd").text(formatRupiah(0, true));
+                    $("#cn-ytd").text(formatRupiah(0, true));
+                    $("#ap-mtd").text(formatRupiah(0, true));
+                    $("#cn-mtd").text(formatRupiah(0, true));
 
-                $("#disb-ytd").text(formatRupiah(0, true));
-                $("#disb-mtd").text(formatRupiah(0, true));
-                $("#ap-ytd").text(formatRupiah(0, true));
-                $("#cn-ytd").text(formatRupiah(0, true));
-                $("#ap-mtd").text(formatRupiah(0, true));
-                $("#cn-mtd").text(formatRupiah(0, true));
-
-                // Set default month & year ke saat ini
-                const now = new Date();
-                $("#monthFilter").val((now.getMonth() + 1).toString());
-                $("#yearFilter").val(now.getFullYear().toString());
-                // === Load Data Initial ===
-                fetchData();
-            
-                // === Refresh data saat filter berubah ===
-                $("#yearFilter, #monthFilter, #typeFilter").on("change", fetchData);
-            });
-            </script>
+                    // Set default month & year ke saat ini
+                    const now = new Date();
+                    $("#monthFilter").val((now.getMonth() + 1).toString());
+                    $("#yearFilter").val(now.getFullYear().toString());
+                
+                    // === Load Data Initial ===
+                    fetchData();
+                
+                    // === Refresh data saat filter berubah ===
+                    $("#yearFilter, #monthFilter, #typeFilter, #periodFilter").on("change", fetchData);
+                });
+                </script>
+            </div>
         </div>
 </body>
 </html>

@@ -181,6 +181,27 @@
                             </nav>
                         </div>
                     </div>
+                    <div class="col-md-3 align-self-center">
+                      <div class="d-flex justify-content-end">
+                        <div class="customize-input me-3" style="min-width: 120px;">
+                          <select id="yearFilter" class="custom-select custom-select-set form-control bg-white border-0 custom-shadow custom-radius">
+                            <option value="2025" selected>2025</option>
+                            <!-- <option value="2024">2024</option> -->
+                          </select>
+                        </div>
+                        <div class="customize-input me-3" style="min-width: 120px;">
+                          <select id="monthFilter" class="custom-select custom-select-set form-control bg-white border-0 custom-shadow custom-radius">
+                            <option value="6">Jun</option>
+                            <option value="7">Jul</option>
+                            <option value="8">Aug</option>
+                            <option value="9">Sep</option>
+                            <option value="10">Oct</option>
+                            <option value="11">Nov</option>
+                            <option value="12">Dec</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
                 </div>
             </div>
         
@@ -276,81 +297,105 @@
                     <!-- Script -->
                     <script>
                       document.addEventListener("DOMContentLoaded", function () {
-                        fetch("/data/claim-summary")
-                          .then(res => res.json())
-                          .then(data => {
-                            const { source_summary, claim_detail } = data;
-                        
-                            // === CARD atas: per source_id ===
-                            const sourceToId = {
-                              "NDTL": "balance-ndtl",
-                              "BCAD": "balance-bcad",
-                              "DBS": "balance-dbs",
-                              "SUPERBANK": "balance-superbank",
-                              "SEABANK_V2": "balance-seabank"
-                            };
-                        
-                            // Kosongkan dulu semua value
-                            for (const id of Object.values(sourceToId)) {
-                              const el = document.getElementById(id);
-                              if (el) el.innerText = "0";
-                            }
-                        
-                            source_summary.forEach(({ source_id, total_claim }) => {
-                              const el = document.getElementById(sourceToId[source_id]);
-                              if (el) el.textContent = total_claim ? `${total_claim.toLocaleString("id-ID")}` : '0';
-                            });
-                        
-                            // === Transform ke nested structure: nested[lender][source_id] = value ===
-                            const nested = {};
-                            const sourceIds = new Set();
-                        
-                            claim_detail.forEach(({ lender, source_id, total_claim }) => {
-                              if (!nested[lender]) nested[lender] = {};
-                              nested[lender][source_id] = total_claim;
-                              sourceIds.add(source_id);
-                            });
-                        
-                            const columns = Array.from(sourceIds).sort();  // Misalnya: ["BCAD", "DBS", ...]
-                        
-                            // === Header Table ===
-                            const header = document.getElementById("summaryHeader");
-                            header.innerHTML = "";
-                            const body = document.getElementById("summaryBody");
-                        
-                            // Baris pertama
-                            const row1 = document.createElement("tr");
-                            row1.innerHTML = `
-                              <th rowspan="2" class="text-center align-middle">Lender</th>
-                              <th colspan="${columns.length}" class="text-center">Source ID</th>
-                              <th rowspan="2" class="text-center align-middle">Total</th>
-                            `;
-                            header.appendChild(row1);
-                        
-                            // Baris kedua
-                            const row2 = document.createElement("tr");
-                            columns.forEach(source_id => {
-                              row2.innerHTML += `<th class="text-center">${source_id}</th>`;
-                            });
-                            header.appendChild(row2);
-                        
-                            // === Body Table ===
-                            const lenders = Object.keys(nested).sort();
-                            lenders.forEach(lender => {
-                              const row = document.createElement("tr");
-                              row.innerHTML = `<td>${lender}</td>`;
-                              let total = 0;
-                            
+                        const yearFilter = document.getElementById("yearFilter");
+                        const monthFilter = document.getElementById("monthFilter");                 
+
+                        // Set default filter ke bulan dan tahun saat ini (tanpa leading zero)
+                        const now = new Date();
+                        const currentYear = now.getFullYear();
+                        const currentMonth = now.getMonth() + 1; // angka 1–12 tanpa padStart                   
+
+                        yearFilter.value = currentYear;
+                        monthFilter.value = currentMonth;                   
+
+                        function loadClaimSummary() {
+                          const year = yearFilter.value;
+                          const month = monthFilter.value;                  
+
+                          fetch(`/data/claim-summary?year=${year}&month=${month}`)
+                            .then(res => res.json())
+                            .then(data => {
+                              const { source_summary, claim_detail } = data;                    
+
+                              // === Update Card Balances ===
+                              const sourceToId = {
+                                "NDTL": "balance-ndtl",
+                                "BCAD": "balance-bcad",
+                                "DBS": "balance-dbs",
+                                "SUPERBANK": "balance-superbank",
+                                "SEABANK_V2": "balance-seabank"
+                              };                    
+
+                              // Clear cards
+                              for (const id of Object.values(sourceToId)) {
+                                const el = document.getElementById(id);
+                                if (el) el.innerText = "0";
+                              }                 
+
+                              // Update values
+                              source_summary.forEach(({ source_id, total_claim }) => {
+                                const el = document.getElementById(sourceToId[source_id]);
+                                if (el) el.textContent = total_claim ? `${total_claim.toLocaleString("id-ID")}` : '0';
+                              });                   
+
+                              // === Build Table Summary ===
+                              const nested = {};
+                              const sourceIds = new Set();                  
+
+                              claim_detail.forEach(({ lender, source_id, total_claim }) => {
+                                if (!nested[lender]) nested[lender] = {};
+                                nested[lender][source_id] = total_claim;
+                                sourceIds.add(source_id);
+                              });                   
+
+                              const columns = Array.from(sourceIds).sort();
+                              const header = document.getElementById("summaryHeader");
+                              const body = document.getElementById("summaryBody");                  
+
+                              header.innerHTML = "";
+                              body.innerHTML = "";                  
+
+                              // Header baris 1
+                              const row1 = document.createElement("tr");
+                              row1.innerHTML = `
+                                <th rowspan="2" class="text-center align-middle">Lender</th>
+                                <th colspan="${columns.length}" class="text-center">Source ID</th>
+                                <th rowspan="2" class="text-center align-middle">Total</th>
+                              `;
+                              header.appendChild(row1);                 
+
+                              // Header baris 2
+                              const row2 = document.createElement("tr");
                               columns.forEach(source_id => {
-                                const val = nested[lender]?.[source_id] || 0;
-                                total += val;
-                                row.innerHTML += `<td class="text-end">${val > 0 ? val.toLocaleString("id-ID") : ''}</td>`;
+                                row2.innerHTML += `<th class="text-center">${source_id}</th>`;
                               });
-                          
-                              row.innerHTML += `<td class="text-end fw-bold">${total > 0 ? total.toLocaleString("id-ID") : ''}</td>`;
-                              body.appendChild(row);
+                              header.appendChild(row2);                 
+
+                              // Body
+                              const lenders = Object.keys(nested).sort();
+                              lenders.forEach(lender => {
+                                const row = document.createElement("tr");
+                                row.innerHTML = `<td>${lender}</td>`;
+                                let total = 0;                  
+
+                                columns.forEach(source_id => {
+                                  const val = nested[lender]?.[source_id] || 0;
+                                  total += val;
+                                  row.innerHTML += `<td class="text-end">${val > 0 ? val.toLocaleString("id-ID") : ''}</td>`;
+                                });                 
+
+                                row.innerHTML += `<td class="text-end fw-bold">${total > 0 ? total.toLocaleString("id-ID") : ''}</td>`;
+                                body.appendChild(row);
+                              });
                             });
-                          });
+                        }                   
+
+                        // Load awal
+                        loadClaimSummary();                 
+
+                        // Event saat filter berubah
+                        yearFilter.addEventListener("change", loadClaimSummary);
+                        monthFilter.addEventListener("change", loadClaimSummary);
                       });
                     </script>
                 </div>
@@ -385,31 +430,59 @@
                     </div>
                     <script>
                     document.addEventListener("DOMContentLoaded", function () {
-                        // Isi tabel dan inisialisasi DataTable
-                        fetch("/data/claim-settlement")
-                            .then(res => res.json())
-                            .then(data => {
-                                const rows = data.data;
-                                const body = document.getElementById("settlementBody");
-                            
-                                body.innerHTML = rows.map(row => `
-                                    <tr>
-                                        <td>${row.claim_category ?? ''}</td>
-                                        <td>${row.claim_amount ? Number(row.claim_amount).toLocaleString('id-ID') : ''}</td>
-                                        <td>${row.source_id ?? ''}</td>
-                                        <td>${row.account_balance ?? ''}</td>
-                                        <td>${row.claim_date ?? ''}</td>
-
-                                    </tr>
-                                `).join('');
-                                
-                                $('#settlement_table').DataTable({
-                                    order: [[0, 'asc']],
-                                    pageLength: 10,
-                                    lengthMenu: [5, 10, 25, 50, 100]
-                                });
-                            })
-                            
+                      const yearFilter = document.getElementById("yearFilter");
+                      const monthFilter = document.getElementById("monthFilter");
+                    
+                      const today = new Date();
+                      const currentYear = today.getFullYear();
+                      const currentMonth = today.getMonth() + 1;
+                    
+                      if (yearFilter) yearFilter.value = currentYear;
+                      if (monthFilter) monthFilter.value = currentMonth;
+                    
+                      let dataTable; // Simpan instance DataTables
+                    
+                      function loadClaimSettlement() {
+                        const year = yearFilter.value;
+                        const month = monthFilter.value;
+                    
+                        fetch(`/data/claim-settlement?year=${year}&month=${month}`)
+                          .then(res => res.json())
+                          .then(data => {
+                            const rows = data.data ?? [];
+                        
+                            // Inisialisasi jika pertama kali
+                            if (!dataTable) {
+                              dataTable = $('#settlement_table').DataTable({
+                                responsive: true,
+                                paging: true,
+                                searching: true,
+                                ordering: true,
+                                info: true,
+                                data: rows.map(row => [
+                                  row.claim_category ?? '',
+                                  row.claim_amount ? Number(row.claim_amount).toLocaleString('id-ID') : '',
+                                  row.source_id ?? '',
+                                  row.account_balance ?? '',
+                                  row.claim_date ?? ''
+                                ]),
+                              });
+                            } else {
+                              dataTable.clear();
+                              dataTable.rows.add(rows.map(row => [
+                                row.claim_category ?? '',
+                                row.claim_amount ? Number(row.claim_amount).toLocaleString('id-ID') : '',
+                                row.source_id ?? '',
+                                row.account_balance ?? '',
+                                row.claim_date ?? ''
+                              ])).draw();
+                            }
+                          });
+                      }
+                  
+                      loadClaimSettlement();
+                      yearFilter.addEventListener('change', loadClaimSettlement);
+                      monthFilter.addEventListener('change', loadClaimSettlement);
                     });
                     </script>
                 </div>

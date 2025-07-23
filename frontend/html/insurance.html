@@ -59,6 +59,12 @@
                             <img src="/assets/images/logo-icon.png" alt="" class="img-fluid">
                         </a>
                     </div>
+                    <!-- ============================================================== -->
+                    <!-- End Logo -->
+                    <!-- ============================================================== -->
+                    <!-- ============================================================== -->
+                    <!-- Toggle which is visible on mobile only -->
+                    <!-- ============================================================== -->
                     <a class="topbartoggler d-block d-lg-none waves-effect waves-light" href="javascript:void(0)"
                         data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
                         aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><i
@@ -70,6 +76,9 @@
                 <div class="navbar-collapse collapse" id="navbarSupportedContent">
                     
                     <ul class="navbar-nav float-left me-auto ms-3 ps-1"></ul>
+                    <!-- ============================================================== -->
+                    <!-- Right side toggle and nav items -->
+                    <!-- ============================================================== -->
                     <ul class="navbar-nav float-end">
                         <!-- ============================================================== -->
                         <!-- User profile and search -->
@@ -164,6 +173,27 @@
                                 </ol>
                             </nav>
                         </div>
+                    </div>
+                    <div class="col-md-3 align-self-center">
+                      <div class="d-flex justify-content-end">
+                        <div class="customize-input me-3" style="min-width: 120px;">
+                          <select id="yearFilter" class="custom-select custom-select-set form-control bg-white border-0 custom-shadow custom-radius">
+                            <option value="2025" selected>2025</option>
+                            <!-- <option value="2024">2024</option> -->
+                          </select>
+                        </div>
+                        <div class="customize-input me-3" style="min-width: 120px;">
+                          <select id="monthFilter" class="custom-select custom-select-set form-control bg-white border-0 custom-shadow custom-radius">
+                            <option value="6">Jun</option>
+                            <option value="7">Jul</option>
+                            <option value="8">Aug</option>
+                            <option value="9">Sep</option>
+                            <option value="10">Oct</option>
+                            <option value="11">Nov</option>
+                            <option value="12">Dec</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                 </div>
             </div>
@@ -272,211 +302,232 @@
                   </div>
                 </div>
             </div>
-
             <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                fetch("/data/account-balance")
+              document.addEventListener("DOMContentLoaded", function () {
+                const yearFilter = document.getElementById("yearFilter");
+                const monthFilter = document.getElementById("monthFilter");     
+
+                function loadPremiClaimSummary() {
+                  const year = yearFilter.value;
+                  const month = monthFilter.value;      
+
+                  fetch(`/data/account-balance?year=${year}&month=${month}`)
                     .then(res => res.json())
                     .then(data => {
-                        const body = document.getElementById("sourceSummaryBody");
-                    
-                        body.innerHTML = "";
-                        data.forEach(item => {
-                            const format = (val) => val !== null ? `${val.toLocaleString("id-ID")}` : "-";
-                            const row = `
-                                <tr>
-                                    <td>${item.source_id}</td>
-                                    <td>${format(item.beginning_balance)}</td>
-                                    <td>${format(item.premium_paid)}</td>
-                                    <td>${format(item.claim)}</td>
-                                    <td><strong>${format(item.available_balance)}</strong></td>
-                                </tr>
-                            `;
-                            body.insertAdjacentHTML("beforeend", row);
-                            
-                            const cardId = {
-                                NDTL: "balance-ndtl",
-                                BNC: "balance-bnc",
-                                SEABANK_V2: "balance-seabank",
-                                DBS: "balance-dbs",
-                                SUPERBANK: "balance-superbank",
-                                STAR_DANA: "balance-stardana",
-                                BCAD: "balance-bcad"
-                            }[item.source_id];
-                            if (cardId) {
-                                const el = document.getElementById(cardId);
-                                if (el) el.textContent = format(item.available_balance);
-                            }
-                        });
+                      const body = document.getElementById("sourceSummaryBody");
+                      body.innerHTML = "";      
+
+                      const lenderToId = {
+                        NDTL: "balance-ndtl",
+                        BNC: "balance-bnc",
+                        SEABANK_V2: "balance-seabank",
+                        DBS: "balance-dbs",
+                        SUPERBANK: "balance-superbank",
+                        STAR_DANA: "balance-stardana",
+                        BCAD: "balance-bcad"
+                      };        
+
+                      // Reset kartu saldo
+                      for (const id of Object.values(lenderToId)) {
+                        const el = document.getElementById(id);
+                        if (el) el.textContent = "0";
+                      }     
+
+                      data.forEach(item => {
+                        const format = val => val !== null && val !== undefined ? val.toLocaleString("id-ID") : "-";        
+
+                        const row = `
+                          <tr>
+                            <td>${item.source_id}</td>
+                            <td>${format(item.beginning_balance)}</td>
+                            <td>${format(item.premium_paid)}</td>
+                            <td>${format(item.claim)}</td>
+                            <td><strong>${format(item.available_balance)}</strong></td>
+                          </tr>
+                        `;
+                        body.insertAdjacentHTML("beforeend", row);      
+
+                        const cardId = lenderToId[item.source_id];
+                        if (cardId) {
+                          const el = document.getElementById(cardId);
+                          if (el) el.textContent = format(item.available_balance);
+                        }
+                      });
                     })
                     .catch(err => {
-                        console.error("Error fetching data:", err);
+                      console.error("Error fetching account balance data:", err);
                     });
-            });
-            </script>
+                }       
 
+                // First load
+                loadPremiClaimSummary();        
+
+                // Reload on filter change
+                yearFilter.addEventListener("change", loadPremiClaimSummary);
+                monthFilter.addEventListener("change", loadPremiClaimSummary);
+              });
+            </script>
             <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                fetch("/data/premi-claim-summary")
+              document.addEventListener("DOMContentLoaded", function () {
+                const yearFilter = document.getElementById("yearFilter");
+                const monthFilter = document.getElementById("monthFilter");
+            
+                function loadPremiClaimSummary() {
+                  const year = yearFilter.value;
+                  const month = monthFilter.value;
+                
+                  fetch(`/data/premi-claim-summary?year=${year}&month=${month}`)
                     .then(res => res.json())
                     .then(data => {
-                        const beginning = data.beginning_balance;
-                        const unpaid = data.premium_unpaid;
-                        const paid = data.premium_paid;
-                        const claim = data.claim;
-        
-                        const header = document.getElementById("summaryHeader");
-                        const body = document.getElementById("summaryBody");
+                      const beginning = data.beginning_balance;
+                      const unpaid = data.premium_unpaid;
+                      const paid = data.premium_paid;
+                      const claim = data.claim;
                     
-                        const rows = new Set(); // semua bank_account
-                        const sectionHeaders = [];
+                      const header = document.getElementById("summaryHeader");
+                      const body = document.getElementById("summaryBody");
                     
-                        const sections = [
-                            { name: "PREMIUM UNPAID", data: unpaid },
-                            { name: "PREMIUM PAID (after fee deduction)", data: paid },
-                            { name: "CLAIM", data: claim }
-                        ];
+                      // Clear previous table contents
+                      header.innerHTML = "";
+                      body.innerHTML = "";
                     
-                        // Hitung balance per bank_account
-                        const bankAccountBalances = {};
-                        // Hitung balance per bank_account (mulai dari beginning balance)
-                        for (const bankAccount in beginning) {
-                            bankAccountBalances[bankAccount] = beginning[bankAccount] || 0;
+                      const rows = new Set();
+                      const sectionHeaders = [];
+                    
+                      const sections = [
+                        { name: "PREMIUM UNPAID", data: unpaid },
+                        { name: "PREMIUM PAID (after fee deduction)", data: paid },
+                        { name: "CLAIM", data: claim }
+                      ];
+                    
+                      // Hitung saldo awal per bank_account
+                      const bankAccountBalances = {};
+                      for (const bankAccount in beginning) {
+                        bankAccountBalances[bankAccount] = beginning[bankAccount] || 0;
+                      }
+                  
+                      for (const sourceId in paid) {
+                        for (const lender in paid[sourceId]) {
+                          for (const bankAccount in paid[sourceId][lender]) {
+                            bankAccountBalances[bankAccount] = (bankAccountBalances[bankAccount] || 0) + paid[sourceId][lender][bankAccount];
+                          }
                         }
-
-                        for (const sourceId in paid) {
-                            for (const lender in paid[sourceId]) {
-                                for (const bankAccount in paid[sourceId][lender]) {
-                                    bankAccountBalances[bankAccount] = (bankAccountBalances[bankAccount] || 0) + paid[sourceId][lender][bankAccount];
-                                }
-                            }
+                      }
+                  
+                      for (const sourceId in claim) {
+                        for (const lender in claim[sourceId]) {
+                          for (const bankAccount in claim[sourceId][lender]) {
+                            bankAccountBalances[bankAccount] = (bankAccountBalances[bankAccount] || 0) - claim[sourceId][lender][bankAccount];
+                          }
                         }
-
-                        for (const sourceId in claim) {
-                            for (const lender in claim[sourceId]) {
-                                for (const bankAccount in claim[sourceId][lender]) {
-                                    bankAccountBalances[bankAccount] = (bankAccountBalances[bankAccount] || 0) - claim[sourceId][lender][bankAccount];
-                                }
-                            }
+                      }
+                  
+                      // Hitung saldo akhir per lender
+                      const lenderBalances = {};
+                      for (const sourceId in paid) {
+                        for (const lender in paid[sourceId]) {
+                          for (const bankAccount in paid[sourceId][lender]) {
+                            const balance = bankAccountBalances[bankAccount] || 0;
+                            lenderBalances[lender] = (lenderBalances[lender] || 0) + balance;
+                          }
                         }
-                        // Hitung balance per lender berdasarkan bank account
-                        const lenderBalances = {};
-                        for (const sourceId in paid) {
-                            for (const lender in paid[sourceId]) {
-                                for (const bankAccount in paid[sourceId][lender]) {
-                                    const balance = bankAccountBalances[bankAccount] || 0;
-                                    lenderBalances[lender] = (lenderBalances[lender] || 0) + balance;
-                                }
+                      }
+               
+                      // Bangun header tabel
+                      sections.forEach(section => {
+                        const headerMap = {};
+                        for (const sourceId in section.data) {
+                          for (const lender in section.data[sourceId]) {
+                            headerMap[sourceId] = headerMap[sourceId] || new Set();
+                            headerMap[sourceId].add(lender);
+                            for (const bankAccount in section.data[sourceId][lender]) {
+                              rows.add(bankAccount);
                             }
+                          }
                         }
-                    
-                        // Update UI atas (cards) dengan balance per lender
-                        const lenderToId = {
-                            NDTL: "balance-ndtl",
-                            BNC: "balance-bnc",
-                            SEABANK_V2: "balance-seabank",
-                            DBS: "balance-dbs",
-                            SUPERBANK: "balance-superbank",
-                            STAR_DANA: "balance-stardana",
-                            BCAD: "balance-bcad"
-                        };
-                    
-                        for (const lender in lenderToId) {
-                            const id = lenderToId[lender];
-                            const balance = lenderBalances[lender] || 0;
-                            const formatted = `${balance.toLocaleString("id-ID")}`;
-                            const el = document.getElementById(id);
-                            if (el) el.textContent = formatted;
+                        sectionHeaders.push(headerMap);
+                      });
+                  
+                      const topRow = document.createElement("tr");
+                      const midRow = document.createElement("tr");
+                      const bottomRow = document.createElement("tr");
+                  
+                      topRow.innerHTML = `
+                        <th class="text-center" rowspan="3">BANK ACCOUNT</th>
+                        <th class="text-center" rowspan="3">BEGINNING BALANCE</th>
+                      `;
+                  
+                      sectionHeaders.forEach((headerMap, idx) => {
+                        const count = Object.values(headerMap).reduce((acc, lenders) => acc + lenders.size, 0);
+                        topRow.innerHTML += `<th class="text-center" colspan="${count + 1}">${sections[idx].name}</th>`;
+                      });
+                  
+                      topRow.innerHTML += `<th class="text-center" rowspan="3">AVAILABLE BALANCE</th>`;
+                  
+                      sectionHeaders.forEach(headerMap => {
+                        for (const sourceId in headerMap) {
+                          const lenderCount = headerMap[sourceId].size;
+                          midRow.innerHTML += `<th class="text-center" colspan="${lenderCount}">${sourceId}</th>`;
                         }
+                        midRow.innerHTML += `<th class="text-center" rowspan="2"><strong>TOTAL</strong></th>`;
+                      });
+                  
+                      sectionHeaders.forEach(headerMap => {
+                        for (const sourceId in headerMap) {
+                          for (const lender of headerMap[sourceId]) {
+                            bottomRow.innerHTML += `<th class="text-center">${lender}</th>`;
+                          }
+                        }
+                      });
+                  
+                      header.appendChild(topRow);
+                      header.appendChild(midRow);
+                      header.appendChild(bottomRow);
+                  
+                      Array.from(rows).sort().forEach(bankAccount => {
+                        const row = document.createElement("tr");
                     
-                        // Build headers
-                        sections.forEach(section => {
-                            const headerMap = {};
-                            for (const sourceId in section.data) {
-                                for (const lender in section.data[sourceId]) {
-                                    headerMap[sourceId] = headerMap[sourceId] || new Set();
-                                    headerMap[sourceId].add(lender);
-                                    for (const bankAccount in section.data[sourceId][lender]) {
-                                        rows.add(bankAccount);
-                                    }
-                                }
-                            }
-                            sectionHeaders.push(headerMap);
-                        });
+                        const begin = beginning[bankAccount] || 0;
+                        const formattedBegin = begin ? `${begin.toLocaleString("id-ID")}` : "";
                     
-                        const topRow = document.createElement("tr");
-                        const midRow = document.createElement("tr");
-                        const bottomRow = document.createElement("tr");
-
-                        // Baris 1: Nama Section (PREMIUM UNPAID, etc.)
-                        topRow.innerHTML = `
-                            <th class="text-center" rowspan="3">BANK ACCOUNT</th>
-                            <th class="text-center" rowspan="3">BEGINNING BALANCE</th>
-                        `;
-
-                        sectionHeaders.forEach((headerMap, idx) => {
-                            const count = Object.values(headerMap).reduce((acc, lenders) => acc + lenders.size, 0);
-                            topRow.innerHTML += `<th class="text-center" colspan="${count + 1}">${sections[idx].name}</th>`;
-                        });
-                        topRow.innerHTML += `<th class="text-center" rowspan="3">AVAILABLE BALANCE</th>`;
-                        // Baris 2: Source ID
-                        sectionHeaders.forEach(headerMap => {
-                            for (const sourceId in headerMap) {
-                                const lenderCount = headerMap[sourceId].size;
-                                midRow.innerHTML += `<th class="text-center" colspan="${lenderCount}">${sourceId}</th>`;
-                            }
-                            midRow.innerHTML += `<th class="text-center" rowspan="2"><strong>TOTAL</strong></th>`;
-                        });
-                        // Baris 3: Lender
-                        sectionHeaders.forEach(headerMap => {
-                            for (const sourceId in headerMap) {
-                                for (const lender of headerMap[sourceId]) {
-                                    bottomRow.innerHTML += `<th class="text-center">${lender}</th>`;
-                                }
-                            }
-                        });
-                        // Append ke thead
-                        header.appendChild(topRow);
-                        header.appendChild(midRow);
-                        header.appendChild(bottomRow);
+                        row.innerHTML = `<td>${bankAccount}</td><td>${formattedBegin}</td>`;
                     
-                        // Isi tabel
-                        Array.from(rows).sort().forEach(bankAccount => {
-                            const row = document.createElement("tr");
+                        let rowPaid = 0;
+                        let rowClaim = 0;
+                    
+                        sections.forEach((section, idx) => {
+                          const headerMap = sectionHeaders[idx];
+                          let sectionTotal = 0;
                         
-                            const begin = beginning[bankAccount] || 0;
-                            const formattedBegin = begin ? `${begin.toLocaleString("id-ID")}` : "";
-
-                            row.innerHTML = `<td>${bankAccount}</td><td>${formattedBegin}</td>`;
-
-                        
-                            let rowPaid = 0;
-                            let rowClaim = 0;
-                        
-                            sections.forEach((section, idx) => {
-                                const headerMap = sectionHeaders[idx];
-                                let sectionTotal = 0;
+                          for (const sourceId in headerMap) {
+                            for (const lender of headerMap[sourceId]) {
+                              const val = section.data?.[sourceId]?.[lender]?.[bankAccount] || 0;
+                              sectionTotal += val;
+                              const formatted = val ? `${val.toLocaleString("id-ID")}` : "";
+                              row.innerHTML += `<td>${formatted}</td>`;
                             
-                                for (const sourceId in headerMap) {
-                                    for (const lender of headerMap[sourceId]) {
-                                        const val = section.data?.[sourceId]?.[lender]?.[bankAccount] || 0;
-                                        sectionTotal += val;
-                                        const formatted = val ? `${val.toLocaleString("id-ID")}` : "";
-                                        row.innerHTML += `<td>${formatted}</td>`;
-                                    
-                                        if (section.name.includes("PAID")) rowPaid += val;
-                                        if (section.name === "CLAIM") rowClaim += val;
-                                    }
-                                }                                
-                                row.innerHTML += `<td><strong>${sectionTotal ? '' + sectionTotal.toLocaleString("id-ID") : ''}</strong></td>`;
-                            });
-                        
-                            const balance = begin + rowPaid - rowClaim;
-                            row.innerHTML += `<td><strong>${balance ? '' + balance.toLocaleString("id-ID") : ''}</strong></td>`;
-                            body.appendChild(row);
+                              if (section.name.includes("PAID")) rowPaid += val;
+                              if (section.name === "CLAIM") rowClaim += val;
+                            }
+                          }
+                      
+                          row.innerHTML += `<td><strong>${sectionTotal ? sectionTotal.toLocaleString("id-ID") : ""}</strong></td>`;
                         });
+                    
+                        const balance = begin + rowPaid - rowClaim;
+                        row.innerHTML += `<td><strong>${balance ? balance.toLocaleString("id-ID") : ""}</strong></td>`;
+                        body.appendChild(row);
+                      });
                     });
-            });
+                }
+            
+                // Load data pertama kali
+                loadPremiClaimSummary();
+            
+                // Reload ketika filter berubah
+                yearFilter.addEventListener("change", loadPremiClaimSummary);
+                monthFilter.addEventListener("change", loadPremiClaimSummary);
+              });
             </script>
 </body>
 </html>
