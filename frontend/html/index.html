@@ -121,7 +121,7 @@
                         <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="index.html"
                                 aria-expanded="false"><i data-feather="home" class="feather-icon"></i><span
                                     class="hide-menu">Dashboard</span></a></li>
-                        <li class="list-divider"></li>
+                        <!-- <li class="list-divider"></li>
                         <li class="nav-small-cap"><span class="hide-menu">FINANCE</span></li>
                         <li class="sidebar-item"> <a class="sidebar-link" href="disbursement.html"
                             aria-expanded="false"><i data-feather="tag" class="feather-icon"></i><span
@@ -131,7 +131,7 @@
                                     class="hide-menu">Repayment</span></a></li>
                         <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="outstanding.html"
                                 aria-expanded="false"><i data-feather="calendar" class="feather-icon"></i><span
-                                    class="hide-menu">Outstanding</span></a></li>
+                                    class="hide-menu">Outstanding</span></a></li> -->
                     </ul>
                 </nav>
                 <!-- End Sidebar navigation -->
@@ -228,29 +228,31 @@
                   <script>
                     async function loadDashboard() {
                       try {
-                        // Set loading dulu biar user tahu data sedang diambil
+                        // Tampilkan status loading
                         document.getElementById('disbursementYTDValue').textContent = 'Loading...';
                         document.getElementById('repaymentValue').textContent = 'Loading...';
                         document.getElementById('outstandingValue').textContent = 'Loading...';
-                    
-                        const res = await fetch('/data/dashboard');
+                      
+                        const currentYear = new Date().getFullYear();
+                        const res = await fetch(`/data/dashboard?year=${currentYear}`);
+                      
+                        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
                         const data = await res.json();
-                    
+                      
                         document.getElementById('disbursementYTDValue').textContent = data.disbursement_ytd.toLocaleString();
                         document.getElementById('repaymentValue').textContent = data.repayment.toLocaleString();
                         document.getElementById('outstandingValue').textContent = data.outstanding.toLocaleString();
-                    
                       } catch (error) {
                         console.error('Error fetching dashboard data:', error);
-                        // Kalau error, kasih tanda error juga biar user tahu
                         document.getElementById('disbursementYTDValue').textContent = 'Error';
                         document.getElementById('repaymentValue').textContent = 'Error';
                         document.getElementById('outstandingValue').textContent = 'Error';
                       }
                     }
-
+                  
                     loadDashboard();
-                  </script>                  
+                  </script>               
                 <!-- *************************************************************** -->
                 <!-- End First Cards -->
                 <!-- *************************************************************** -->
